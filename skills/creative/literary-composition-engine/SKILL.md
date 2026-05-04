@@ -400,6 +400,7 @@ Canonical sentence flow:
 paragraph_reader_contract
 → paragraph_assertions
 → sentence_meaning_plan with semantic payload, no final prose
+→ sentence_anchor.matching.yaml with pre-writing formal requirements and candidates
 → literal source_sentence_anchor selection from `sentences`
 → source_to_target_alignment_plan
 → target sentence generation
@@ -427,6 +428,7 @@ For each paragraph:
 ```text
 paragraph.request.yaml
 neutral.paragraph.yaml
+sentence_anchor.matching.yaml
 source_sentence_anchor.selection.yaml
 paragraph.rewrite.plan.yaml
 candidate.output.yaml
@@ -471,6 +473,32 @@ run.decision.log.yaml
 literal `selected_source_sentence_text`, rejected candidate source sentences,
 part-by-part alignment plan, and semantic content that must not be copied.
 
+Before selecting the final anchor, write `sentence_anchor.matching.yaml`. This
+artifact is the anti-retrojustification gate: it describes what the planned
+target sentence needs before final prose exists, searches several real source
+sentences, rejects incompatible forms, and selects only a strong or acceptable
+formal match. `acceptable_form_match` means the selected source preserves most
+governing sentence machinery and declares narrow differences; it never means
+"same vibe", "same broad operation", or "can be explained after the fact".
+
+For each target sentence, matching must record:
+
+- required target form: mood, clause sequence, coordination/subordination,
+  expected turn logic, enumeration/contrast/negation needs, and punctuation
+  function if any;
+- incompatible source forms, such as question vs declaration, list vs event,
+  event vs inventory, temporal turn vs administrative assignment;
+- several candidate source sentences with explicit `form_match_status` values:
+  `strong_form_match`, `acceptable_form_match`, `weak_form_match`, or
+  `failed_form_match`;
+- a selected source with `strong_form_match` or `acceptable_form_match` before
+  any target sentence is written.
+
+Block when a source is selected first and justified later. Block when the
+selected source is a question but the target is a declaration, a bodily event
+but the target is an inventory, or any similar mood/turn/category mismatch,
+unless the artifact explicitly proves the same governing machinery survives.
+
 The alignment agent, writer, and independent auditor may read the source sentence
 text. The writer must imitate the actual sentence architecture while replacing
 the semantic payload. Block if the alignment is generic enough that many
@@ -483,6 +511,12 @@ source is necessary for that sentence's semantic payload. A source story
 over-concentration or long sequential run is a release blocker unless the user
 explicitly requested imitation of one specific source work.
 
+Generic source parts are invalid. Do not write `source_words_or_span: "opening
+syntax"`, `source_words_or_span: "clause skeleton"`, or `formal_job:
+"qualification"`. Cite literal spans from the source sentence and name their
+local job, for example: `source_words_or_span: "As I began my request"`,
+`formal_job: "temporal subordinate opener that precedes a visible reaction"`.
+
 Do not let generic GPT rhetoric pass as source fidelity. A surface formula such
 as `not with X, but with Y` is blocked unless the chosen source sentence has an
 equivalent contrastive/corrective operation and the alignment cites that
@@ -492,9 +526,10 @@ operation explicitly.
 
 Before paragraph release, run
 `references/prompts/run_phase4_sentence_anchor_repair_pass.md`. This pass audits every
-target/source sentence pair by rhetorical operation, not by punctuation or
-sentence length. It must write `sentence_anchor.final_audit.yaml` and
-`final.anchor.lock.yaml` for every paragraph.
+target/source sentence pair by concrete sentence machinery, not by punctuation,
+sentence length, or broad operation labels. It must write
+`sentence_anchor.final_audit.yaml` and `final.anchor.lock.yaml` for every
+paragraph.
 
 Only `strong_anchor` and `acceptable_anchor` may appear in
 `final.anchor.lock.yaml`. If a sentence is `weak_anchor` or `failed_anchor`, the
@@ -510,6 +545,12 @@ causal qualification, contrastive correction, evidentiary inventory, sensory
 observation, inference from material detail, temporal reversal, definition by
 negation, or closing constraint. Do not reuse any operation label as a default
 for all authors or all paragraphs.
+
+Operation labels are never sufficient. The final audit must separately check
+source/target mood, clause order, coordination/subordination, governing turn
+logic, punctuation function, and category fit. A target can pass with small
+differences only when those differences are listed as acceptable in
+`sentence_anchor.matching.yaml` before generation.
 
 ### Phase 4.5 Final Text Repair Gate
 

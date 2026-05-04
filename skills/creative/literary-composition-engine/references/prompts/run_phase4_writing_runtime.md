@@ -124,7 +124,7 @@ length_release_gates:
   target_median_paragraph_words: "near corpus median paragraph words"
 ```
 
-Source-anchor selection rule:
+Source-anchor matching and selection rule:
 
 Do not assign source anchors sequentially from one story. For every planned
 sentence, retrieve multiple candidate source sentences from `sentences_fts` or
@@ -132,6 +132,68 @@ direct corpus browsing whose actual sentence form can carry that sentence's
 semantic payload, then choose one and record rejected candidates. The selected
 source must be necessary enough that replacing it with many unrelated source
 sentences would weaken the justification.
+
+Before writing `source_sentence_anchor.selection.yaml`, write
+`sentence_anchor.matching.yaml`. This file must be created before any final
+target sentence exists. It prevents the model from choosing a random source
+sentence and retrojustifying it after generation.
+
+For every planned target sentence, first define formal requirements from the
+semantic payload:
+
+```yaml
+sentence_anchor_matching:
+  paragraph_id: ""
+  sentences:
+    - sentence_id: ""
+      semantic_payload_ref: ""
+      target_semantic_job: ""
+      target_form_requirements:
+        required_mood: "declarative | interrogative | imperative | fragment_allowed"
+        required_clause_sequence:
+          - "concrete description of required clause/move in order"
+        required_coordination_or_subordination:
+          - ""
+        required_turn_logic: ""
+        required_enumeration_or_contrast: ""
+        required_punctuation_function: ""
+      incompatible_source_forms:
+        - "yes/no question when target must be factual declaration"
+        - "bodily crisis event when target must be inventory or assignment"
+      candidate_source_sentences:
+        - source_sentence_ref: {}
+          source_sentence_text: ""
+          source_form_analysis:
+            mood: ""
+            clause_sequence:
+              - ""
+            coordination_or_subordination:
+              - ""
+            turn_logic: ""
+            punctuation_function: ""
+          form_match_status: "strong_form_match | acceptable_form_match | weak_form_match | failed_form_match"
+          fit_reason_before_writing: ""
+          mismatch_reason: ""
+      selected_source_sentence_ref: {}
+      selected_source_sentence_text: ""
+      selected_form_match_status: "strong_form_match | acceptable_form_match"
+      acceptable_differences:
+        - ""
+      why_selected_before_writing: ""
+```
+
+`acceptable_form_match` is allowed because perfect matches may not exist, but it
+must preserve most governing machinery: mood or equivalent force, clause order,
+coordination/subordination, turn logic, category of movement, and punctuation
+function where relevant. A merely broad label such as `causal qualification` or
+`evidentiary inventory` is not enough.
+
+Block before writing if the best source candidate is only `weak_form_match` or
+`failed_form_match`. Search more. A selected question cannot anchor a factual
+declaration; a crisis-event sentence cannot anchor an administrative inventory;
+a temporal reaction sentence cannot anchor an object list, unless the matching
+artifact proves that the same sentence machinery survives and states the narrow
+difference.
 
 Write `source_sentence_anchor.selection.yaml`, never
 `sentence.pattern.selection.yaml`. It must include for each planned target
@@ -143,6 +205,11 @@ source_sentence_anchor_selection:
     - sentence_id: ""
       semantic_payload_ref: ""
       target_semantic_job: ""   # semantic plan only, not final prose
+      matching_ref: "sentence_anchor.matching.yaml#..."
+      selected_form_match_status: "strong_form_match | acceptable_form_match"
+      target_form_requirements: {}
+      selected_source_form_analysis: {}
+      acceptable_differences_from_source_form: []
       selected_source_sentence_ref:
         story_id: ""
         sentence_id: 0
@@ -154,10 +221,11 @@ source_sentence_anchor_selection:
         - source_sentence_ref: {}
           source_sentence_text: ""
           useful_formal_features_in_this_exact_sentence: []
+          form_match_status: "strong_form_match | acceptable_form_match | weak_form_match | failed_form_match"
           rejection_reason: ""
       source_sentence_parts:
         - part_id: "src_001"
-          source_words_or_span: ""
+          source_words_or_span: "" # literal span from the source, never "opening syntax"
           formal_job: ""
       target_payload_slots:
         - slot_id: "tgt_001"
@@ -186,6 +254,11 @@ sentence" as the reason. The selection reason and part map must be so specific
 that the auditor can reject the sentence if a different source sentence would
 serve just as well.
 
+Do not use generic source spans such as "opening syntax", "clause skeleton",
+"main clause", or "qualification" unless they are accompanied by literal source
+words and a sentence-local job. The auditor must be able to point to the exact
+words in the source sentence that the target is imitating.
+
 The target writer may see `selected_source_sentence_text`, but must not copy its
 semantic content, images, scene, entities, conclusion, proper nouns, or memorable
 phrasing. The task is to force new semantic payload into the old sentence's
@@ -206,9 +279,10 @@ anchor_status_values:
   - failed_anchor
 ```
 
-The classification must compare rhetorical operation, not only length,
-punctuation, or clause count. Operation labels must be derived from the selected
-source sentence itself, not reused as defaults. Examples of possible labels:
+The classification must compare concrete source machinery, not only length,
+punctuation, clause count, or operation labels. Operation labels must be derived
+from the selected source sentence itself, not reused as defaults. Examples of
+possible labels:
 
 ```yaml
 rhetorical_operations:
@@ -257,6 +331,15 @@ sentence_anchor_final_audit:
       target_rhetorical_operation: ""
       source_rhetorical_operation: ""
       operation_match: "exact | close | partial | no"
+      formal_match_checks:
+        mood_match: "yes | acceptable_difference | no"
+        clause_sequence_match: "yes | acceptable_difference | no"
+        coordination_subordination_match: "yes | acceptable_difference | no"
+        turn_logic_match: "yes | acceptable_difference | no"
+        punctuation_function_match: "yes | acceptable_difference | no"
+        category_fit: "yes | acceptable_difference | no"
+        acceptable_differences_from_matching:
+          - ""
       initial_anchor_status: "strong_anchor | acceptable_anchor | weak_anchor | failed_anchor"
       final_anchor_status: "strong_anchor | acceptable_anchor | weak_anchor | failed_anchor"
       why_status: ""
@@ -281,6 +364,7 @@ final_anchor_lock:
       target_rhetorical_operation: ""
       source_rhetorical_operation: ""
       operation_match: "exact | close"
+      formal_match_status: "strong_form_match | acceptable_form_match"
 ```
 
 Release is blocked if final audit or lock is missing, if any final sentence

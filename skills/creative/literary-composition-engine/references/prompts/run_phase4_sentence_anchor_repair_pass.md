@@ -5,8 +5,9 @@ anchor audit exist, before `final.paragraph.yaml` and `paragraph.release.yaml`
 are released.
 
 Goal: ensure every final target sentence is a necessary imitation of one real
-source sentence's rhetorical operation, not merely similar in length,
-punctuation, or generic "opening / qualification / implication" shape.
+source sentence's concrete machinery, not merely similar in length,
+punctuation, broad rhetorical label, or generic "opening / qualification /
+implication" shape.
 
 Inputs:
 
@@ -14,6 +15,7 @@ Inputs:
 paragraph.request.yaml
 neutral.paragraph.yaml
 sentence_meaning.plan.yaml
+sentence_anchor.matching.yaml
 source_sentence_anchor.selection.yaml
 paragraph.rewrite.plan.yaml
 candidate.output.yaml
@@ -40,7 +42,10 @@ For every sentence mapping, identify:
 - selected literal source sentence;
 - target rhetorical operation;
 - source rhetorical operation;
-- whether the operations match.
+- whether the operations match;
+- whether mood, clause order, coordination/subordination, turn logic,
+  punctuation function, and category fit match or were pre-declared as
+  acceptable differences in `sentence_anchor.matching.yaml`.
 
 Use these status values:
 
@@ -50,8 +55,9 @@ anchor_status_values:
     Source and target execute the same local rhetorical operation, with the
     same kind of sentence movement and no copied source semantics.
   acceptable_anchor: >
-    Source licenses the target with a narrow, explicit difference that does not
-    weaken mimicry or semantic clarity.
+    Source licenses the target with a narrow, explicit difference, declared
+    before writing in `sentence_anchor.matching.yaml`, that does not weaken
+    mimicry or semantic clarity.
   weak_anchor: >
     Source was selected mainly for length, punctuation, broad clause shape, or
     generic explanation; the rhetorical operation does not really match.
@@ -86,6 +92,18 @@ Block shallow approvals. Do not approve because:
 - a boilerplate explanation says "opening, qualification, implication";
 - the source could be replaced by many unrelated corpus sentences.
 
+Also block concrete mismatches:
+
+- source is a question and target is a factual declaration;
+- source is a bodily crisis/event and target is an inventory, assignment, or
+  administrative statement;
+- source is an inventory and target is a temporal event sequence;
+- source has temporal subordination but target has only an appositive list;
+- source and target share only a broad operation label.
+
+These may pass only if `sentence_anchor.matching.yaml` already named the
+difference as acceptable and proves that most governing machinery survives.
+
 ## 2. Write Final Audit
 
 Always write:
@@ -103,6 +121,15 @@ sentence_anchor_final_audit:
       target_rhetorical_operation: ""
       source_rhetorical_operation: ""
       operation_match: "exact | close | partial | no"
+      formal_match_checks:
+        mood_match: "yes | acceptable_difference | no"
+        clause_sequence_match: "yes | acceptable_difference | no"
+        coordination_subordination_match: "yes | acceptable_difference | no"
+        turn_logic_match: "yes | acceptable_difference | no"
+        punctuation_function_match: "yes | acceptable_difference | no"
+        category_fit: "yes | acceptable_difference | no"
+        acceptable_differences_from_matching:
+          - ""
       initial_anchor_status: "strong_anchor | acceptable_anchor | weak_anchor | failed_anchor"
       final_anchor_status: "strong_anchor | acceptable_anchor | weak_anchor | failed_anchor"
       why_status: ""
@@ -117,13 +144,19 @@ sentence_anchor_final_audit:
 If any sentence is `weak_anchor` or `failed_anchor`:
 
 1. Preserve its semantic payload exactly.
-2. Search `sentences` / `sentences_fts` for source sentences whose rhetorical
-   operation matches the target operation.
-3. Record multiple candidates, including rejected candidates.
-4. Select a new literal source sentence.
-5. Rewrite only the target sentence to fit the new source sentence.
-6. Update sentence mapping, source hash, source alignment, and paragraph text.
-7. Do not change story facts, entities, causal order, knowledge state, symbols,
+2. Derive formal requirements from the semantic payload: required mood, clause
+   sequence, coordination/subordination, turn logic, category, and punctuation
+   function.
+3. Search `sentences` / `sentences_fts` for source sentences whose concrete
+   form matches those requirements.
+4. Record multiple candidates, including rejected candidates, with
+   `form_match_status`.
+5. Select a new literal source sentence only if it is `strong_form_match` or
+   `acceptable_form_match`.
+6. Rewrite only the target sentence to fit the new source sentence.
+7. Update `sentence_anchor.matching.yaml`, source selection, sentence mapping,
+   source hash, source alignment, and paragraph text.
+8. Do not change story facts, entities, causal order, knowledge state, symbols,
    or user constraints.
 
 Write:
@@ -136,6 +169,14 @@ sentence_anchor_repair_plan:
       repair_action: "replace_anchor_and_rewrite_sentence | rewrite_sentence_to_source | split_sentence | block"
       semantic_payload_to_preserve: ""
       required_rhetorical_operation: ""
+      required_form:
+        mood: ""
+        clause_sequence:
+          - ""
+        coordination_or_subordination:
+          - ""
+        turn_logic: ""
+        category: ""
       old_source_sentence_ref: {}
       old_source_sentence_text: ""
       old_failure_reason: ""
@@ -143,10 +184,12 @@ sentence_anchor_repair_plan:
         - source_sentence_ref: {}
           source_sentence_text: ""
           rhetorical_operation: ""
+          form_match_status: "strong_form_match | acceptable_form_match | weak_form_match | failed_form_match"
           fit_reason: ""
           rejection_reason: ""
       selected_new_source_sentence_ref: {}
       selected_new_source_sentence_text: ""
+      selected_form_match_status: "strong_form_match | acceptable_form_match"
       rewrite_instruction: ""
       forbidden_changes:
         - "do not alter narrative content"
@@ -180,6 +223,7 @@ final_anchor_lock:
       target_rhetorical_operation: ""
       source_rhetorical_operation: ""
       operation_match: "exact | close"
+      formal_match_status: "strong_form_match | acceptable_form_match"
 ```
 
 `final.paragraph.yaml` must match the locked candidate text exactly.
@@ -195,4 +239,7 @@ Block release if:
 - repair was applied but no `repaired.candidate.output.yaml` exists;
 - final lock points to a candidate whose text differs from `final.paragraph.yaml`;
 - repair changes story content instead of anchor/form;
-- source and target operations do not match beyond punctuation or size.
+- source and target operations do not match beyond punctuation or size;
+- `sentence_anchor.matching.yaml` is missing, generic, or selects a weak/failed form match;
+- final audit lacks concrete formal checks for mood, clause sequence,
+  coordination/subordination, turn logic, punctuation function, and category fit.

@@ -24,6 +24,7 @@ except ModuleNotFoundError:  # pragma: no cover - environment dependent
 REQUIRED_PARAGRAPH_FILES = [
     "paragraph.request.yaml",
     "neutral.paragraph.yaml",
+    "sentence_anchor.matching.yaml",
     "source_sentence_anchor.selection.yaml",
     "paragraph.rewrite.plan.yaml",
     "candidate.output.yaml",
@@ -98,6 +99,35 @@ STRICT_NOT_BUT_LICENSE_TERMS = [
     "contrastive replacement",
     "corrective replacement",
 ]
+
+PASSING_FORM_MATCH_STATUSES = {"strong_form_match", "acceptable_form_match"}
+
+FORMAL_MATCH_CHECK_KEYS = [
+    "mood_match",
+    "clause_sequence_match",
+    "coordination_subordination_match",
+    "turn_logic_match",
+    "punctuation_function_match",
+    "category_fit",
+]
+
+GENERIC_SOURCE_SPAN_MARKERS = {
+    "opening syntax",
+    "abertura sintática",
+    "main clause",
+    "oração principal",
+    "clause skeleton",
+    "source clause skeleton",
+    "qualification",
+    "qualificação",
+    "development",
+    "desenvolvimento",
+    "opening",
+    "abertura",
+    "generic opening",
+    "formal operation",
+    "source words or span",
+}
 
 
 def load_yaml(path: Path) -> Any:
@@ -186,6 +216,27 @@ def source_ref_key(ref: Any) -> str:
     story = source_story_from_ref(ref)
     sentence_id = source_sentence_id_from_ref(ref)
     return f"{story}#{sentence_id}" if story and sentence_id is not None else ""
+
+
+def missing_or_empty(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    if isinstance(value, (list, dict)):
+        return not bool(value)
+    return False
+
+
+def is_generic_source_span(value: Any) -> bool:
+    text = flatten_text(value).strip().casefold()
+    if not text:
+        return True
+    normalized = re.sub(r"[^a-zà-öø-ÿ0-9 ]+", " ", text)
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    if normalized in GENERIC_SOURCE_SPAN_MARKERS:
+        return True
+    return any(marker in normalized for marker in GENERIC_SOURCE_SPAN_MARKERS if len(marker) > 10)
 
 
 def longest_sequential_source_sentence_run(refs: list[Any]) -> int:
@@ -338,6 +389,111 @@ def validate(args: argparse.Namespace) -> int:
             final_texts.append(final_text)
 
         neutral = artifact_root(loaded.get("neutral.paragraph.yaml"), "neutral_paragraph")
+        matching_artifact = loaded.get("sentence_anchor.matching.yaml") or {}
+        matching_root = artifact_root(matching_artifact, "sentence_anchor_matching")
+        matching_entries: dict[str, dict[str, Any]] = {}
+        if not matching_root:
+            finding(
+                "missing_sentence_anchor_matching_root",
+                pdir / "sentence_anchor.matching.yaml",
+                f"{pid} lacks sentence_anchor_matching",
+            )
+        if matching_root.get("written_before_candidate_output") is not True:
+            finding(
+                "sentence_anchor_matching_not_prewrite",
+                pdir / "sentence_anchor.matching.yaml",
+                f"{pid} sentence_anchor.matching.yaml must declare written_before_candidate_output: true",
+            )
+        matching_sentences = matching_root.get("sentences") if isinstance(matching_root, dict) else None
+        if not isinstance(matching_sentences, list) or not matching_sentences:
+            finding(
+                "sentence_anchor_matching_missing_sentences",
+                pdir / "sentence_anchor.matching.yaml",
+                f"{pid} sentence_anchor.matching.yaml has no sentences list",
+            )
+        else:
+            for item in matching_sentences:
+                if not isinstance(item, dict):
+                    continue
+                sentence_id = item.get("sentence_id")
+                if isinstance(sentence_id, str):
+                    matching_entries[sentence_id] = item
+                target_form = item.get("target_form_requirements")
+                if not isinstance(target_form, dict):
+                    finding(
+                        "sentence_anchor_matching_missing_target_form",
+                        pdir / "sentence_anchor.matching.yaml",
+                        f"{pid}/{sentence_id or '?'} lacks target_form_requirements",
+                    )
+                else:
+                    required_form_keys = [
+                        "required_mood",
+                        "required_clause_sequence",
+                        "required_turn_logic",
+                        "required_punctuation_function",
+                        "required_category_of_movement",
+                    ]
+                    for key in required_form_keys:
+                        if missing_or_empty(target_form.get(key)):
+                            finding(
+                                "sentence_anchor_matching_incomplete_target_form",
+                                pdir / "sentence_anchor.matching.yaml",
+                                f"{pid}/{sentence_id or '?'} target_form_requirements.{key} is missing or empty",
+                            )
+                selected_status = item.get("selected_form_match_status")
+                if selected_status not in PASSING_FORM_MATCH_STATUSES:
+                    finding(
+                        "sentence_anchor_matching_selected_status_not_releasable",
+                        pdir / "sentence_anchor.matching.yaml",
+                        f"{pid}/{sentence_id or '?'} selected_form_match_status is {selected_status!r}",
+                    )
+                candidates = item.get("candidate_source_sentences")
+                if not isinstance(candidates, list) or len(candidates) < 3:
+                    finding(
+                        "sentence_anchor_matching_too_few_candidates",
+                        pdir / "sentence_anchor.matching.yaml",
+                        f"{pid}/{sentence_id or '?'} must record at least three form-matching candidates",
+                    )
+                else:
+                    if not any(candidate.get("form_match_status") in PASSING_FORM_MATCH_STATUSES for candidate in candidates if isinstance(candidate, dict)):
+                        finding(
+                            "sentence_anchor_matching_no_passing_candidate",
+                            pdir / "sentence_anchor.matching.yaml",
+                            f"{pid}/{sentence_id or '?'} has no strong/acceptable candidate",
+                        )
+                    for candidate in candidates:
+                        if not isinstance(candidate, dict):
+                            continue
+                        if missing_or_empty(candidate.get("source_sentence_text")):
+                            finding(
+                                "sentence_anchor_matching_candidate_missing_source_text",
+                                pdir / "sentence_anchor.matching.yaml",
+                                f"{pid}/{sentence_id or '?'} candidate lacks source_sentence_text",
+                            )
+                        if candidate.get("form_match_status") not in {
+                            "strong_form_match",
+                            "acceptable_form_match",
+                            "weak_form_match",
+                            "failed_form_match",
+                        }:
+                            finding(
+                                "sentence_anchor_matching_bad_candidate_status",
+                                pdir / "sentence_anchor.matching.yaml",
+                                f"{pid}/{sentence_id or '?'} candidate form_match_status is {candidate.get('form_match_status')!r}",
+                            )
+                        form_analysis = candidate.get("source_form_analysis")
+                        if not isinstance(form_analysis, dict) or missing_or_empty(form_analysis.get("mood")) or missing_or_empty(form_analysis.get("clause_sequence")):
+                            finding(
+                                "sentence_anchor_matching_incomplete_source_form",
+                                pdir / "sentence_anchor.matching.yaml",
+                                f"{pid}/{sentence_id or '?'} candidate lacks concrete source_form_analysis",
+                            )
+                if missing_or_empty(item.get("why_selected_before_writing")):
+                    finding(
+                        "sentence_anchor_matching_missing_prewrite_reason",
+                        pdir / "sentence_anchor.matching.yaml",
+                        f"{pid}/{sentence_id or '?'} lacks why_selected_before_writing",
+                    )
         final_audit = loaded.get("sentence_anchor.final_audit.yaml") or {}
         final_audit_root = final_audit.get("sentence_anchor_final_audit") if isinstance(final_audit, dict) else {}
         if not isinstance(final_audit_root, dict):
@@ -380,6 +536,29 @@ def validate(args: argparse.Namespace) -> int:
                         pdir / "sentence_anchor.final_audit.yaml",
                         f"{pid}/{sentence_id} must declare target and source rhetorical operations",
                     )
+                prewrite_status = result.get("prewriting_form_match_status")
+                if prewrite_status not in PASSING_FORM_MATCH_STATUSES:
+                    finding(
+                        "sentence_anchor_prewrite_form_match_not_releasable",
+                        pdir / "sentence_anchor.final_audit.yaml",
+                        f"{pid}/{sentence_id} prewriting_form_match_status is {prewrite_status!r}",
+                    )
+                checks = result.get("formal_match_checks")
+                if not isinstance(checks, dict):
+                    finding(
+                        "sentence_anchor_missing_formal_match_checks",
+                        pdir / "sentence_anchor.final_audit.yaml",
+                        f"{pid}/{sentence_id} lacks formal_match_checks",
+                    )
+                else:
+                    for key in FORMAL_MATCH_CHECK_KEYS:
+                        value = checks.get(key)
+                        if value not in {"yes", "acceptable_difference"}:
+                            finding(
+                                "sentence_anchor_formal_match_check_failed",
+                                pdir / "sentence_anchor.final_audit.yaml",
+                                f"{pid}/{sentence_id} formal_match_checks.{key} is {value!r}",
+                            )
                 if result.get("initial_anchor_status") in {"weak_anchor", "failed_anchor"}:
                     repair_required = True
         if repair_required:
@@ -454,6 +633,12 @@ def validate(args: argparse.Namespace) -> int:
                         "locked_sentence_missing_rhetorical_operation",
                         pdir / "final.anchor.lock.yaml",
                         f"{pid}/{sentence_id} lock must declare target and source rhetorical operations",
+                    )
+                if lock.get("formal_match_status") not in PASSING_FORM_MATCH_STATUSES:
+                    finding(
+                        "locked_sentence_formal_match_status_not_releasable",
+                        pdir / "final.anchor.lock.yaml",
+                        f"{pid}/{sentence_id} formal_match_status is {lock.get('formal_match_status')!r}",
                     )
 
         candidate = artifact_root(loaded.get(locked_candidate_ref) or loaded.get("candidate.output.yaml"), "candidate_output")
@@ -550,6 +735,37 @@ def validate(args: argparse.Namespace) -> int:
                 reason = item.get("why_this_exact_sentence_is_necessary") or item.get("selected_because")
                 if isinstance(reason, str) and reason.strip():
                     all_selection_reasons.append(reason)
+                matching_entry = matching_entries.get(sentence_id) if isinstance(sentence_id, str) else None
+                if not matching_entry:
+                    finding(
+                        "source_anchor_selection_missing_matching_entry",
+                        pdir / "source_sentence_anchor.selection.yaml",
+                        f"{pid}/{sentence_id or '?'} has no corresponding sentence_anchor.matching.yaml entry",
+                    )
+                if item.get("selected_form_match_status") not in PASSING_FORM_MATCH_STATUSES:
+                    finding(
+                        "source_anchor_selection_form_match_not_releasable",
+                        pdir / "source_sentence_anchor.selection.yaml",
+                        f"{pid}/{sentence_id or '?'} selected_form_match_status is {item.get('selected_form_match_status')!r}",
+                    )
+                if missing_or_empty(item.get("matching_ref")):
+                    finding(
+                        "source_anchor_selection_missing_matching_ref",
+                        pdir / "source_sentence_anchor.selection.yaml",
+                        f"{pid}/{sentence_id or '?'} lacks matching_ref",
+                    )
+                if missing_or_empty(item.get("target_form_requirements")):
+                    finding(
+                        "source_anchor_selection_missing_target_form",
+                        pdir / "source_sentence_anchor.selection.yaml",
+                        f"{pid}/{sentence_id or '?'} lacks target_form_requirements",
+                    )
+                if missing_or_empty(item.get("selected_source_form_analysis")):
+                    finding(
+                        "source_anchor_selection_missing_source_form_analysis",
+                        pdir / "source_sentence_anchor.selection.yaml",
+                        f"{pid}/{sentence_id or '?'} lacks selected_source_form_analysis",
+                    )
                 if not item.get("selected_source_sentence_text"):
                     finding(
                         "missing_selected_source_sentence_text",
@@ -562,6 +778,43 @@ def validate(args: argparse.Namespace) -> int:
                         pdir / "source_sentence_anchor.selection.yaml",
                         f"{pid}/{sentence_id or '?'} must record multiple candidate source sentences considered",
                     )
+                else:
+                    for candidate in item.get("candidate_source_sentences_considered") or []:
+                        if isinstance(candidate, dict) and candidate.get("form_match_status") not in {
+                            "strong_form_match",
+                            "acceptable_form_match",
+                            "weak_form_match",
+                            "failed_form_match",
+                        }:
+                            finding(
+                                "source_anchor_selection_candidate_missing_form_status",
+                                pdir / "source_sentence_anchor.selection.yaml",
+                                f"{pid}/{sentence_id or '?'} candidate lacks valid form_match_status",
+                            )
+                source_parts = item.get("source_sentence_parts")
+                if not isinstance(source_parts, list) or not source_parts:
+                    finding(
+                        "source_anchor_selection_missing_source_parts",
+                        pdir / "source_sentence_anchor.selection.yaml",
+                        f"{pid}/{sentence_id or '?'} lacks source_sentence_parts",
+                    )
+                else:
+                    for part in source_parts:
+                        if not isinstance(part, dict):
+                            continue
+                        span = part.get("source_words_or_span")
+                        if is_generic_source_span(span):
+                            finding(
+                                "source_anchor_selection_generic_source_span",
+                                pdir / "source_sentence_anchor.selection.yaml",
+                                f"{pid}/{sentence_id or '?'} has generic source_words_or_span: {span!r}",
+                            )
+                        if missing_or_empty(part.get("formal_job")) or is_generic_source_span(part.get("formal_job")):
+                            finding(
+                                "source_anchor_selection_generic_formal_job",
+                                pdir / "source_sentence_anchor.selection.yaml",
+                                f"{pid}/{sentence_id or '?'} has generic formal_job: {part.get('formal_job')!r}",
+                            )
 
         alignments = selection.get("source_to_target_alignment_plan") or selection_root.get("source_to_target_alignment_plan") or []
         if isinstance(alignments, list):
@@ -573,6 +826,22 @@ def validate(args: argparse.Namespace) -> int:
                     all_source_fidelity.append(fidelity)
                 elif isinstance(fidelity, list):
                     all_source_fidelity.append(flatten_text(fidelity))
+                    for part_map in fidelity:
+                        if not isinstance(part_map, dict):
+                            continue
+                        span = part_map.get("source_words_or_span")
+                        if is_generic_source_span(span):
+                            finding(
+                                "source_alignment_generic_source_span",
+                                pdir / "source_sentence_anchor.selection.yaml",
+                                f"{pid}/{item.get('sentence_id', '?')} alignment has generic source_words_or_span: {span!r}",
+                            )
+                        if missing_or_empty(part_map.get("source_formal_job")) or is_generic_source_span(part_map.get("source_formal_job")):
+                            finding(
+                                "source_alignment_generic_formal_job",
+                                pdir / "source_sentence_anchor.selection.yaml",
+                                f"{pid}/{item.get('sentence_id', '?')} alignment has generic source_formal_job: {part_map.get('source_formal_job')!r}",
+                            )
                 independence = item.get("target_semantic_independence")
                 if isinstance(independence, str) and independence.strip():
                     all_semantic_independence.append(independence)

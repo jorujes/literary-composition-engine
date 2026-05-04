@@ -134,6 +134,7 @@ runs/<author>/<run_id>/
   paragraphs/p001/
     paragraph.request.yaml
     neutral.paragraph.yaml
+    sentence_anchor.matching.yaml
     sentence.plan.yaml
     source_sentence_anchor.selection.yaml
     paragraph.rewrite.plan.yaml
@@ -164,6 +165,7 @@ references/schemas/phase4/writing-request.schema.yaml
 references/schemas/phase4/outline-candidates.schema.yaml
 references/schemas/phase4/story-blueprint.schema.yaml
 references/schemas/phase4/paragraph-plan.schema.yaml
+references/schemas/phase4/sentence-anchor-matching.schema.yaml
 references/schemas/phase4/source-sentence-anchor-selection.schema.yaml
 references/schemas/phase4/candidate-output.schema.yaml
 references/schemas/phase4/sentence-anchor-final-audit.schema.yaml

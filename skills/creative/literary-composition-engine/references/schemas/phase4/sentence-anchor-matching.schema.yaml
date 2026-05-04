@@ -1,0 +1,69 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/paragraphs/<pid>/sentence_anchor.matching.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: >
+    Select source-sentence candidates by concrete form before final prose is
+    written, preventing retrojustified source anchoring.
+  required_top_level:
+    - "sentence_anchor_matching"
+  schema:
+    sentence_anchor_matching:
+      run_id: ""
+      paragraph_id: ""
+      written_before_candidate_output: true
+      sentences:
+        - sentence_id: ""
+          semantic_payload_ref: ""
+          target_semantic_job: ""
+          target_form_requirements:
+            required_mood: "declarative | interrogative | imperative | fragment_allowed"
+            required_clause_sequence:
+              - ""
+            required_coordination_or_subordination:
+              - ""
+            required_turn_logic: ""
+            required_enumeration_or_contrast: ""
+            required_punctuation_function: ""
+            required_category_of_movement: ""
+          incompatible_source_forms:
+            - ""
+          candidate_source_sentences:
+            - source_sentence_ref:
+                story_id: ""
+                sentence_id: null
+                paragraph_position: null
+                sentence_position: null
+                source_text_hash: ""
+              source_sentence_text: ""
+              source_form_analysis:
+                mood: ""
+                clause_sequence:
+                  - ""
+                coordination_or_subordination:
+                  - ""
+                turn_logic: ""
+                punctuation_function: ""
+                category_of_movement: ""
+              form_match_status: "strong_form_match | acceptable_form_match | weak_form_match | failed_form_match"
+              fit_reason_before_writing: ""
+              mismatch_reason: ""
+          selected_source_sentence_ref: {}
+          selected_source_sentence_text: ""
+          selected_form_match_status: "strong_form_match | acceptable_form_match"
+          acceptable_differences:
+            - ""
+          why_selected_before_writing: ""
+  allowed_values:
+    selected_form_match_status:
+      - "strong_form_match"
+      - "acceptable_form_match"
+    candidate_source_sentences.form_match_status:
+      - "strong_form_match"
+      - "acceptable_form_match"
+      - "weak_form_match"
+      - "failed_form_match"
+  must_not:
+    - "Do not choose a source sentence before defining target form requirements."
+    - "Do not use broad labels such as style, vibe, literary, or atmospheric as form matching."
+    - "Do not pass weak_form_match or failed_form_match into source_sentence_anchor.selection.yaml."
+    - "Do not treat question-to-declaration, event-to-inventory, or list-to-event mismatches as acceptable without explicit narrow justification."

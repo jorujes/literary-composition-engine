@@ -12,6 +12,28 @@ schema_contract:
         - sentence_id: ""
           semantic_payload_ref: ""
           target_semantic_job: ""
+          matching_ref: "sentence_anchor.matching.yaml#/sentence_anchor_matching/sentences/0"
+          selected_form_match_status: "strong_form_match | acceptable_form_match"
+          target_form_requirements:
+            required_mood: ""
+            required_clause_sequence:
+              - ""
+            required_coordination_or_subordination:
+              - ""
+            required_turn_logic: ""
+            required_punctuation_function: ""
+            required_category_of_movement: ""
+          selected_source_form_analysis:
+            mood: ""
+            clause_sequence:
+              - ""
+            coordination_or_subordination:
+              - ""
+            turn_logic: ""
+            punctuation_function: ""
+            category_of_movement: ""
+          acceptable_differences_from_source_form:
+            - ""
           selected_source_sentence_ref:
             story_id: ""
             sentence_id: null
@@ -24,10 +46,11 @@ schema_contract:
               source_sentence_text: ""
               useful_formal_features_in_this_exact_sentence:
                 - ""
+              form_match_status: "strong_form_match | acceptable_form_match | weak_form_match | failed_form_match"
               rejection_reason: ""
           source_sentence_parts:
             - part_id: "src_001"
-              source_words_or_span: ""
+              source_words_or_span: "" # literal source words, not a generic label
               formal_job: ""
           target_payload_slots:
             - slot_id: "tgt_001"
@@ -53,4 +76,5 @@ schema_contract:
     - "Do not use sentence_pattern ids, skeletons, or extracted pattern descriptions."
     - "Do not choose source sentences sequentially without local necessity."
     - "Do not copy source content, images, names, conclusions, or memorable phrasing."
-
+    - "Do not select a source sentence without a prior strong_form_match or acceptable_form_match in sentence_anchor.matching.yaml."
+    - "Do not use generic source spans such as opening syntax, main clause, qualification, or development without literal source words."
