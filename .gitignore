@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Local corpora and generated runs are intentionally excluded.
+sources/
+works/
+corpus/
+author-models/
+runs/
+*.db
+*.sqlite
+*.sqlite3
+*.epub
+*.pdf
+*.docx
+*.mobi
+
+# Local Hermes/Codex state.
+.hermes/
+.codex/
+.env
+.env.*
+
