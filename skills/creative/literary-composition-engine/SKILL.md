@@ -87,8 +87,8 @@ in the user's active workspace. See `references/artifact-schemas.md`.
 Before writing any generated YAML or JSON artifact, load the relevant schema
 from `references/schemas/`. Do not invent fields when the schema already
 provides a place for the information. Do not add arbitrary numeric style scores,
-similarity scores, strength values, or confidence values unless the schema
-explicitly calls for mechanical corpus metadata.
+similarity scores, strength values, or confidence values. Mechanical corpus
+statistics are allowed only when a schema explicitly asks for them.
 
 ## Phase 1 Workflow
 
@@ -255,11 +255,11 @@ Extraction and cleanup agents must write JSON shaped like:
 
 ```json
 {
-  "story_id": "lovecraft/the-call-of-cthulhu",
-  "title": "The Call of Cthulhu",
+  "story_id": "author/title-slug",
+  "title": "Title",
   "collection": null,
-  "source_file": "sources/lovecraft/source.txt",
-  "pub_year": 1928,
+  "source_file": "sources/author/source.txt",
+  "pub_year": null,
   "status": "done",
   "reason": "Complete story extracted; editorial intro excluded.",
   "paragraphs": [
@@ -301,7 +301,7 @@ or:
 - [ ] `stories`, `paragraphs`, `paragraphs_fts`, `sentences`, `sentences_fts`, and `ingestion_log` exist
 - [ ] every intended story is `done` or intentionally `needs_review`
 - [ ] status counts come from `ingestion_log`, not from `stories`
-- [ ] no story has `word_count < 300` unless explicitly justified
+- [ ] unusually low `word_count` values are reviewed against the source and expected work type
 - [ ] FTS5 rebuild completed
 - [ ] each accepted paragraph has sentence rows
 - [ ] report output matches expected corpus size
@@ -505,9 +505,11 @@ preserving the semantic payload. When repair happens, write
 The pass must block shallow matches where the justification is only same length,
 same punctuation, same semicolon, or generic "opening / qualification /
 implication". The source and target need the same local rhetorical operation:
-testimony, public/private contrast, credibility defense, evidence inventory,
-epistemic caveat, ominous consequence, documentary enumeration, sensory
-observation, inference from material detail, or closing warning.
+the operation should be named from the selected source sentence itself, such as
+causal qualification, contrastive correction, evidentiary inventory, sensory
+observation, inference from material detail, temporal reversal, definition by
+negation, or closing constraint. Do not reuse any operation label as a default
+for all authors or all paragraphs.
 
 ### Phase 4.5 Final Text Repair Gate
 

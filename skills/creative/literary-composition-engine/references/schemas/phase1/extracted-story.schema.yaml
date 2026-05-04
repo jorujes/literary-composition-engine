@@ -10,19 +10,19 @@ schema_contract:
     - "collection"
     - "pub_year"
     - "source_file"
+    - "status"
+    - "reason"
     - "paragraphs"
-    - "extraction_notes"
-    - "status_recommendation"
   schema:
     story_id: ""
     title: ""
-    collection: ""
+    collection: null
     pub_year: null
     source_file: ""
+    status: "done | needs_review"
+    reason: ""
     paragraphs:
-      - position: 1
-        text: ""
-        source_location_note: ""
+      - ""
     extraction_notes:
       boundary_decisions:
         - ""
@@ -31,14 +31,12 @@ schema_contract:
           reason: ""
       risks:
         - ""
-    status_recommendation: "done | needs_review"
-    reason: ""
   allowed_values:
-    status_recommendation:
+    status:
       - "done"
       - "needs_review"
   must_not:
     - "Do not include publisher/editor/translator material as story text unless the validation agent identifies it as authorial story material."
     - "Do not mechanically strip epigraphs, dedications, or authorial date lines without explanation."
     - "Do not use parser heuristics as the reason for boundary decisions."
-
+    - "Do not add confidence or probability fields."

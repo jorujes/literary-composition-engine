@@ -22,7 +22,6 @@ Output JSON only:
   "title": "Title",
   "input_story_json": "runs/author/run_id/extracted/author_title.json",
   "validated_status": "done",
-  "confidence": 0.91,
   "summary": "Spot checks against beginning, middle, and end match source; no editorial matter found.",
   "evidence": [
     "start boundary matched source",

@@ -26,7 +26,6 @@ Required JSON:
   "source_file": "sources/author/file.txt",
   "pub_year": null,
   "status": "done",
-  "confidence": 0.93,
   "reason": "Clear start/end boundaries; prose extracted without editorial matter.",
   "paragraphs": [
     "Paragraph one...",

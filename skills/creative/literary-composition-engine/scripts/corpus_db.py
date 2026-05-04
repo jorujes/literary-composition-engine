@@ -56,7 +56,6 @@ CREATE TABLE IF NOT EXISTS ingestion_log (
   source_file TEXT,
   pub_year    INTEGER,
   status      TEXT DEFAULT 'pending',
-  confidence  REAL,
   reason      TEXT,
   updated_at  TEXT
 );
@@ -130,16 +129,15 @@ def load_manifest(args: argparse.Namespace) -> None:
                 """
                 INSERT INTO ingestion_log (
                   story_id, title, collection, source_file, pub_year,
-                  status, confidence, reason, updated_at
+                  status, reason, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(story_id) DO UPDATE SET
                   title=excluded.title,
                   collection=excluded.collection,
                   source_file=excluded.source_file,
                   pub_year=excluded.pub_year,
                   status=excluded.status,
-                  confidence=excluded.confidence,
                   reason=excluded.reason,
                   updated_at=excluded.updated_at
                 """,
@@ -150,7 +148,6 @@ def load_manifest(args: argparse.Namespace) -> None:
                     work.get("source_file"),
                     work.get("pub_year"),
                     work.get("status", "pending"),
-                    work.get("confidence"),
                     work.get("reason"),
                     now_iso(),
                 ),
@@ -169,7 +166,6 @@ def ingest_story(args: argparse.Namespace) -> None:
     cleaned = [p.strip() for p in paragraphs if p and p.strip()]
     wc = word_count(cleaned)
     status = payload.get("status", "done")
-    confidence = payload.get("confidence")
     reason = payload.get("reason")
 
     with connect(args.db) as conn:
@@ -210,16 +206,15 @@ def ingest_story(args: argparse.Namespace) -> None:
             """
             INSERT INTO ingestion_log (
               story_id, title, collection, source_file, pub_year,
-              status, confidence, reason, updated_at
+              status, reason, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(story_id) DO UPDATE SET
               title=excluded.title,
               collection=excluded.collection,
               source_file=excluded.source_file,
               pub_year=excluded.pub_year,
               status=excluded.status,
-              confidence=excluded.confidence,
               reason=excluded.reason,
               updated_at=excluded.updated_at
             """,
@@ -230,7 +225,6 @@ def ingest_story(args: argparse.Namespace) -> None:
                 payload.get("source_file"),
                 payload.get("pub_year"),
                 status,
-                confidence,
                 reason,
                 now_iso(),
             ),
@@ -281,7 +275,7 @@ def list_items(args: argparse.Namespace) -> None:
         migrate_schema(conn)
         rows = conn.execute(
             """
-            SELECT story_id, title, status, confidence, reason
+            SELECT story_id, title, status, reason
             FROM ingestion_log
             WHERE (? IS NULL OR status = ?)
             ORDER BY story_id
@@ -299,11 +293,10 @@ def mark(args: argparse.Namespace) -> None:
         conn.execute(
             """
             UPDATE ingestion_log
-            SET status = ?, confidence = COALESCE(?, confidence),
-                reason = COALESCE(?, reason), updated_at = ?
+            SET status = ?, reason = COALESCE(?, reason), updated_at = ?
             WHERE story_id = ?
             """,
-            (args.status, args.confidence, args.reason, now_iso(), args.story_id),
+            (args.status, args.reason, now_iso(), args.story_id),
         )
         if conn.total_changes == 0:
             raise SystemExit(f"story_id not found: {args.story_id}")
@@ -403,7 +396,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--db", type=Path, required=True)
     p.add_argument("--story-id", required=True)
     p.add_argument("--status", choices=["pending", "done", "needs_review"], required=True)
-    p.add_argument("--confidence", type=float)
     p.add_argument("--reason")
     p.set_defaults(func=mark)
 
@@ -413,7 +405,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("report")
     p.add_argument("--db", type=Path, required=True)
-    p.add_argument("--min-words", type=int, default=300)
+    p.add_argument("--min-words", type=int, default=0)
     p.set_defaults(func=report)
 
     return parser

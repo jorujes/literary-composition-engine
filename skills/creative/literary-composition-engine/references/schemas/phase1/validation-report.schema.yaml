@@ -4,35 +4,32 @@ schema_contract:
   purpose: >
     Decide whether an extracted story can be persisted into the corpus database.
   required_top_level:
-    - "story_validation"
+    - "story_id"
+    - "title"
+    - "input_story_json"
+    - "validated_status"
+    - "summary"
+    - "evidence"
+    - "issues"
+    - "cleanup_applied"
+    - "cleaned_story_json"
   schema:
-    story_validation:
-      story_id: ""
-      validated_status: "done | needs_review"
-      cleaned_story_json: null
-      findings:
-        - finding_id: ""
-          finding_type: "boundary | transcription | cleanup | metadata | source_quality"
-          explanation: ""
-          required_action: "none | use_cleaned_story_json | re_extract | human_review"
-      persistence_allowed: false
-      notes: []
+    story_id: ""
+    title: ""
+    input_story_json: ""
+    validated_status: "done | needs_review"
+    summary: ""
+    evidence:
+      - ""
+    issues:
+      - ""
+    cleanup_applied: false
+    cleaned_story_json: null
   allowed_values:
-    story_validation.validated_status:
+    validated_status:
       - "done"
       - "needs_review"
-    story_validation.findings.finding_type:
-      - "boundary"
-      - "transcription"
-      - "cleanup"
-      - "metadata"
-      - "source_quality"
-    story_validation.findings.required_action:
-      - "none"
-      - "use_cleaned_story_json"
-      - "re_extract"
-      - "human_review"
   must_not:
     - "Do not use statuses such as valid, ok, passed, failed, or approved."
     - "Do not embed a cleaned story object inside cleaned_story_json; use a path or null."
-
+    - "Do not add confidence or probability fields."

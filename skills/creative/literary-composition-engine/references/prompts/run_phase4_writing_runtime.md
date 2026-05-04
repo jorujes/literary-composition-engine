@@ -207,19 +207,20 @@ anchor_status_values:
 ```
 
 The classification must compare rhetorical operation, not only length,
-punctuation, or clause count. Examples of operations:
+punctuation, or clause count. Operation labels must be derived from the selected
+source sentence itself, not reused as defaults. Examples of possible labels:
 
 ```yaml
 rhetorical_operations:
-  - testimonial justification
-  - contrast between public explanation and private account
-  - negative request followed by correction
-  - narrator credibility self-defense
+  - causal qualification
+  - contrastive correction
   - evidentiary inventory
-  - epistemological qualification
-  - ominous consequence
-  - documentary enumeration
-  - closing warning
+  - sensory observation
+  - inference from material detail
+  - definition by negation
+  - temporal reversal
+  - catalog followed by conclusion
+  - closing constraint
 ```
 
 If a sentence is `weak_anchor` or `failed_anchor`, find a better real source

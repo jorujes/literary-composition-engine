@@ -66,7 +66,7 @@ Block if:
 - alignment is boilerplate;
 - the paragraph uses `sentence.pattern.selection.yaml`, `source_sentence_pattern_id`, `pattern_structural_match`, `why_this_pattern_is_necessary`, `clause_skeleton`, or any other `sentence_pattern` field;
 - the selected source sentence was chosen only because it was next in sequence;
-- the sentence is only "Borgesian" by punctuation;
+- the sentence is only superficially authorial by punctuation;
 - the sentence loses planned meaning;
 - the sentence has category error, unclear agent, broken predicate fit, unresolved pronoun, or copied discourse marker without narrative need.
 - the target uses a familiar LLM contrast/correction formula that is not present as a formal operation in the selected source sentence.

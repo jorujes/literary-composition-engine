@@ -28,7 +28,6 @@ Required output:
       "pub_year": null,
       "order": 1,
       "status": "pending",
-      "confidence": 0.9,
       "reason": "Title and boundary are clear from table of contents."
     }
   ],

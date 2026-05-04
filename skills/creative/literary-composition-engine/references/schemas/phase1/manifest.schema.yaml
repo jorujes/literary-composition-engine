@@ -5,44 +5,34 @@ schema_contract:
     Record which works were discovered in the raw source files and which story
     extraction tasks must be created.
   required_top_level:
-    - "author_id"
+    - "author"
     - "source_files"
-    - "discovered_stories"
-    - "excluded_items"
-    - "discovery_findings"
+    - "works"
+    - "excluded_material"
+    - "risks"
   schema:
-    author_id: ""
+    author: ""
     source_files:
-      - path: ""
-        file_type: ""
-        source_note: ""
-    discovered_stories:
+      - ""
+    works:
       - story_id: ""
         title: ""
-        collection: ""
+        collection: null
         pub_year: null
         source_file: ""
-        source_order: null
-        extraction_priority: "normal"
-        boundary_notes: ""
-        risks:
-          - ""
-    excluded_items:
-      - item_label: ""
-        source_file: ""
-        reason_excluded: ""
-    discovery_findings:
-      - finding_id: ""
-        finding_type: "clean | needs_review"
-        explanation: ""
+        order: null
+        status: "pending"
+        reason: ""
+    excluded_material:
+      - label: ""
+        reason: ""
+    risks:
+      - ""
   allowed_values:
-    discovered_stories.extraction_priority:
-      - "normal"
-      - "needs_attention"
-    discovery_findings.finding_type:
-      - "clean"
+    works.status:
+      - "pending"
       - "needs_review"
   must_not:
     - "Do not mark a story done; discovery only creates extraction tasks."
     - "Do not invent publication metadata if the source does not provide it."
-
+    - "Do not add confidence or probability fields."

@@ -17,7 +17,10 @@ schema_contract:
           source_semantic_units:
             - ""
           source_sentence_ref: {}
-          source_anchor_alignment_ref: ""
+          source_sentence_text_hash: ""
+          source_to_target_alignment_ref: ""
+          source_sentence_fidelity: ""
+          target_semantic_independence: ""
       declared_transformations:
         - card: ""
           instruction_pair_id: ""
@@ -34,4 +37,4 @@ schema_contract:
     - "Do not omit sentence_mapping."
     - "Do not include final prose labels copied from neutral drafts."
     - "Do not invent source anchors after the candidate text is written."
-
+    - "Do not replace source_sentence_fidelity with boilerplate repeated across sentences."

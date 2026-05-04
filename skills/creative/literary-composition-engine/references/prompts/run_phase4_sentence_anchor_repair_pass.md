@@ -60,22 +60,21 @@ anchor_status_values:
     becomes semantically broken to fit source form.
 ```
 
-Useful rhetorical operations include, but are not limited to:
+Operation labels must be derived from the selected source sentence itself, not
+reused as defaults. Useful labels may include:
 
 ```yaml
 rhetorical_operations:
-  - "testimonial justification"
-  - "contrast between public explanation and private account"
-  - "negative request followed by correction"
-  - "narrator credibility self-defense"
+  - "causal qualification"
+  - "contrastive correction"
   - "evidentiary inventory"
-  - "epistemological qualification"
-  - "ominous consequence"
-  - "documentary enumeration"
-  - "qualified sensory observation"
+  - "sensory observation"
   - "chain of evidence"
-  - "deduction from material detail"
-  - "closing warning"
+  - "inference from material detail"
+  - "definition by negation"
+  - "temporal reversal"
+  - "catalog followed by conclusion"
+  - "closing constraint"
 ```
 
 Block shallow approvals. Do not approve because:

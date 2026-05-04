@@ -9,31 +9,42 @@ schema_contract:
       run_id: ""
       paragraph_id: ""
       audited_candidate_ref: "candidate.output.yaml"
+      overall_status: "passed | blocked"
+      repair_required: false
       sentence_results:
         - sentence_id: ""
-          source_sentence_ref: {}
-          source_sentence_text: ""
           target_sentence: ""
-          anchor_status: "strong_anchor | acceptable_anchor | weak_anchor | failed_anchor"
-          rhetorical_operation_match: ""
+          selected_source_sentence_ref: {}
+          selected_source_sentence_text: ""
+          target_rhetorical_operation: ""
+          source_rhetorical_operation: ""
+          operation_match: "exact | close | partial | no"
+          initial_anchor_status: "strong_anchor | acceptable_anchor | weak_anchor | failed_anchor"
+          final_anchor_status: "strong_anchor | acceptable_anchor | weak_anchor | failed_anchor"
           semantic_copy_check:
             finding: "clean | possible_copy | failed"
             explanation: ""
-          why_status_was_assigned: ""
-          required_action: "lock | repair_with_same_anchor | reanchor_sentence | block"
-      paragraph_anchor_status: "passed | repair_required | blocked"
+          why_status: ""
+          required_repair: ""
   allowed_values:
-    sentence_results.anchor_status:
+    sentence_anchor_final_audit.overall_status:
+      - "passed"
+      - "blocked"
+    sentence_results.initial_anchor_status:
       - "strong_anchor"
       - "acceptable_anchor"
       - "weak_anchor"
       - "failed_anchor"
-    sentence_results.required_action:
-      - "lock"
-      - "repair_with_same_anchor"
-      - "reanchor_sentence"
-      - "block"
+    sentence_results.final_anchor_status:
+      - "strong_anchor"
+      - "acceptable_anchor"
+      - "weak_anchor"
+      - "failed_anchor"
+    sentence_results.operation_match:
+      - "exact"
+      - "close"
+      - "partial"
+      - "no"
   must_not:
     - "Do not approve based only on punctuation, length, or broad clause count."
     - "Do not pass weak_anchor or failed_anchor into final.anchor.lock.yaml."
-

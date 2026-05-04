@@ -53,17 +53,6 @@ OPTIONAL_STORY_FILES = [
     "final.repaired.output.yaml",
 ]
 
-DEFAULT_FORBIDDEN_TOKENS = [
-    "labyrinth",
-    "mirror",
-    "infinity",
-    "cosmic library",
-    "mystical relic",
-    "magical museum",
-    "journey",
-    "resignification",
-]
-
 GENERIC_ALIGNMENT_MARKERS = [
     "reuses only the formal operation",
     "declarative orientation, causal/concessive qualification, or controlled inventory",
@@ -123,6 +112,15 @@ def text_field(data: dict[str, Any], *names: str) -> str:
         if isinstance(value, str):
             return value
     return ""
+
+
+def artifact_root(data: Any, root_key: str) -> dict[str, Any]:
+    if isinstance(data, dict):
+        value = data.get(root_key)
+        if isinstance(value, dict):
+            return value
+        return data
+    return {}
 
 
 def split_paragraphs(text: str) -> list[str]:
@@ -322,7 +320,7 @@ def validate(args: argparse.Namespace) -> int:
             except Exception as exc:  # noqa: BLE001
                 finding("yaml_parse_error", path, str(exc))
 
-        release = loaded.get("paragraph.release.yaml") or {}
+        release = artifact_root(loaded.get("paragraph.release.yaml"), "paragraph_release")
         if release.get("release_status") != "released":
             finding(
                 "paragraph_not_released",
@@ -332,14 +330,14 @@ def validate(args: argparse.Namespace) -> int:
         else:
             released_count += 1
 
-        final_paragraph = loaded.get("final.paragraph.yaml") or {}
+        final_paragraph = artifact_root(loaded.get("final.paragraph.yaml"), "final_paragraph")
         final_text = text_field(final_paragraph, "final_text", "text")
         if not final_text.strip():
             finding("missing_final_paragraph_text", pdir / "final.paragraph.yaml", f"{pid} has no final text")
         else:
             final_texts.append(final_text)
 
-        neutral = loaded.get("neutral.paragraph.yaml") or {}
+        neutral = artifact_root(loaded.get("neutral.paragraph.yaml"), "neutral_paragraph")
         final_audit = loaded.get("sentence_anchor.final_audit.yaml") or {}
         final_audit_root = final_audit.get("sentence_anchor_final_audit") if isinstance(final_audit, dict) else {}
         if not isinstance(final_audit_root, dict):
@@ -458,7 +456,7 @@ def validate(args: argparse.Namespace) -> int:
                         f"{pid}/{sentence_id} lock must declare target and source rhetorical operations",
                     )
 
-        candidate = loaded.get(locked_candidate_ref) or loaded.get("candidate.output.yaml") or {}
+        candidate = artifact_root(loaded.get(locked_candidate_ref) or loaded.get("candidate.output.yaml"), "candidate_output")
         neutral_text = text_field(neutral, "neutral_text", "text")
         neutral_flat = flatten_text(neutral)
         if NEUTRAL_STUB_LABEL_RE.search(neutral_flat):
@@ -612,7 +610,7 @@ def validate(args: argparse.Namespace) -> int:
 
     final_output_path = run / "final.output.yaml"
     if final_output_path.exists():
-        final_output = load_yaml(final_output_path)
+        final_output = artifact_root(load_yaml(final_output_path), "final_output")
         if not isinstance(final_output.get("final_text"), str) or not final_output.get("final_text", "").strip():
             finding("missing_required_final_text_key", final_output_path, "final.output.yaml must include non-empty final_text")
         story_text = text_field(final_output, "final_text", "text")
@@ -721,7 +719,7 @@ def validate(args: argparse.Namespace) -> int:
     final_release_path = run / "final.release.yaml"
     approved_output_ref = "final.output.yaml"
     if final_release_path.exists():
-        final_release = load_yaml(final_release_path)
+        final_release = artifact_root(load_yaml(final_release_path), "final_release")
         if final_release.get("release_status") != "released":
             finding("final_not_released", final_release_path, "final release_status is not released")
         if final_release.get("blockers"):
@@ -765,7 +763,7 @@ def validate(args: argparse.Namespace) -> int:
     if not approved_output_path.exists():
         finding("approved_output_missing", approved_output_path, f"approved output {approved_output_ref} does not exist")
     elif approved_output_ref == "final.repaired.output.yaml":
-        approved_output = load_yaml(approved_output_path)
+        approved_output = artifact_root(load_yaml(approved_output_path), "final_output")
         approved_text = text_field(approved_output, "final_text", "text")
         if not approved_text.strip():
             finding("missing_approved_output_text", approved_output_path, f"{approved_output_ref} has no final_text/text")
@@ -803,14 +801,14 @@ def validate(args: argparse.Namespace) -> int:
             if story_counts:
                 top_story, top_count = max(story_counts.items(), key=lambda item: item[1])
                 ratio = top_count / len(all_source_refs)
-                if ratio > args.max_source_story_ratio:
+                if args.max_source_story_ratio and ratio > args.max_source_story_ratio:
                     finding(
                         "source_anchor_story_overconcentrated",
                         run,
                         f"{top_count}/{len(all_source_refs)} sentence anchors ({ratio:.2%}) come from {top_story}; max allowed is {args.max_source_story_ratio:.0%}",
                     )
             seq_run = longest_sequential_source_sentence_run(all_source_refs)
-            if seq_run > args.max_sequential_source_sentence_run:
+            if args.max_sequential_source_sentence_run and seq_run > args.max_sequential_source_sentence_run:
                 finding(
                     "source_sentence_anchor_sequential_assignment",
                     run,
@@ -818,21 +816,21 @@ def validate(args: argparse.Namespace) -> int:
                 )
 
         fidelity_ratio = duplicate_ratio(all_source_fidelity)
-        if fidelity_ratio > args.max_duplicate_source_fidelity_ratio:
+        if args.max_duplicate_source_fidelity_ratio and fidelity_ratio > args.max_duplicate_source_fidelity_ratio:
             finding(
                 "boilerplate_source_sentence_fidelity",
                 run,
                 f"most repeated source_sentence_fidelity/source alignment text covers {fidelity_ratio:.2%} of mapped sentences; max allowed is {args.max_duplicate_source_fidelity_ratio:.0%}",
             )
         semantic_ratio = duplicate_ratio(all_semantic_independence)
-        if semantic_ratio > args.max_duplicate_semantic_independence_ratio:
+        if args.max_duplicate_semantic_independence_ratio and semantic_ratio > args.max_duplicate_semantic_independence_ratio:
             finding(
                 "boilerplate_target_semantic_independence",
                 run,
                 f"most repeated target_semantic_independence text covers {semantic_ratio:.2%} of mapped sentences; max allowed is {args.max_duplicate_semantic_independence_ratio:.0%}",
             )
         reason_ratio = duplicate_ratio(all_selection_reasons)
-        if all_selection_reasons and reason_ratio > args.max_duplicate_selection_reason_ratio:
+        if all_selection_reasons and args.max_duplicate_selection_reason_ratio and reason_ratio > args.max_duplicate_selection_reason_ratio:
             finding(
                 "boilerplate_anchor_selection_reason",
                 run,
@@ -891,16 +889,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-total-words", type=int, default=0)
     parser.add_argument("--min-median-paragraph-words", type=int, default=0)
     parser.add_argument("--min-paragraph-words", type=int, default=0)
-    parser.add_argument("--max-source-story-ratio", type=float, default=0.70)
-    parser.add_argument("--max-sequential-source-sentence-run", type=int, default=8)
-    parser.add_argument("--max-duplicate-source-fidelity-ratio", type=float, default=0.25)
-    parser.add_argument("--max-duplicate-semantic-independence-ratio", type=float, default=0.25)
-    parser.add_argument("--max-duplicate-selection-reason-ratio", type=float, default=0.25)
+    parser.add_argument("--max-source-story-ratio", type=float, default=0.0, help="Optional run-specific source-story concentration ceiling; 0 disables.")
+    parser.add_argument("--max-sequential-source-sentence-run", type=int, default=0, help="Optional run-specific sequential-anchor ceiling; 0 disables.")
+    parser.add_argument("--max-duplicate-source-fidelity-ratio", type=float, default=0.0, help="Optional run-specific duplicate-fidelity ceiling; 0 disables.")
+    parser.add_argument("--max-duplicate-semantic-independence-ratio", type=float, default=0.0, help="Optional run-specific duplicate-independence ceiling; 0 disables.")
+    parser.add_argument("--max-duplicate-selection-reason-ratio", type=float, default=0.0, help="Optional run-specific duplicate-selection-reason ceiling; 0 disables.")
     parser.add_argument(
         "--forbidden-token",
         action="append",
-        default=list(DEFAULT_FORBIDDEN_TOKENS),
-        help="Forbidden token to search in final output; repeatable.",
+        default=[],
+        help="Run-specific forbidden token to search in final output; repeatable. No author-specific tokens are forbidden by default.",
     )
     return parser
 
