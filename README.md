@@ -55,7 +55,7 @@ skills/creative/literary-composition-engine/
 
 examples/lovecraft/
   a-cor-do-lodo.pt-BR.md
-  the-colour-of-the-mud.en.md
+  the-colour-of-sludge.en.md
 ```
 
 Generated corpora, author packs, and run artifacts are not included. They are local working data and may contain source material from whatever corpus the operator provides.
@@ -91,7 +91,7 @@ runs/<author>/<run_id>/
 The Lovecraft demo story is included in Portuguese and English:
 
 - [A Cor do Lodo](examples/lovecraft/a-cor-do-lodo.pt-BR.md)
-- [The Colour of the Mud](examples/lovecraft/the-colour-of-the-mud.en.md)
+- [The Colour of Sludge](examples/lovecraft/the-colour-of-sludge.en.md)
 
 The English file is a translation of the Portuguese demo output, included for presentation/readability.
 
