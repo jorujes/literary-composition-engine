@@ -67,17 +67,21 @@ Inside this skill:
 ```text
 scripts/corpus_db.py                      # mechanical SQLite tool
 scripts/validate_phase4_run.py            # mechanical Phase 4 release validator
-prompts/discover_stories.md               # discovery agent prompt
-prompts/extract_story.md                  # extraction agent prompt
-prompts/cleanup_story.md                  # cleanup agent prompt
-prompts/validate_story.md                 # validation agent prompt
-prompts/run_phase2_author_pack.md         # Phase 2 orchestration prompt
-prompts/run_phase3_validation.md          # Phase 3 orchestration prompt
-prompts/run_phase4_writing_runtime.md     # Phase 4 orchestration prompt
-prompts/audit_phase4_sentence_anchor.md   # independent sentence anchor audit prompt
-prompts/run_phase4_sentence_anchor_repair_pass.md # final anchor repair/lock prompt
-prompts/run_phase45_final_text_repair.md  # story-level final text repair prompt
+references/artifact-schemas.md            # generated artifact locations and required files
+references/prompts/discover_stories.md    # discovery agent prompt
+references/prompts/extract_story.md       # extraction agent prompt
+references/prompts/cleanup_story.md       # cleanup agent prompt
+references/prompts/validate_story.md      # validation agent prompt
+references/prompts/run_phase2_author_pack.md         # Phase 2 orchestration prompt
+references/prompts/run_phase3_validation.md          # Phase 3 orchestration prompt
+references/prompts/run_phase4_writing_runtime.md     # Phase 4 orchestration prompt
+references/prompts/audit_phase4_sentence_anchor.md   # independent sentence anchor audit prompt
+references/prompts/run_phase4_sentence_anchor_repair_pass.md # final anchor repair/lock prompt
+references/prompts/run_phase45_final_text_repair.md  # story-level final text repair prompt
 ```
+
+Generated DBs, YAML author packs, validation reports, and run artifacts belong
+in the user's active workspace. See `references/artifact-schemas.md`.
 
 ## Phase 1 Workflow
 
@@ -96,7 +100,7 @@ Hermes is responsible for creating `corpus/<author>.db` if it does not exist. Do
 ### 1. Create the Author DB
 
 ```bash
-python3 ~/.hermes/skills/creative/literary-composition-engine/scripts/corpus_db.py init --db corpus/<author>.db
+python3 ${HERMES_SKILL_DIR}/scripts/corpus_db.py init --db corpus/<author>.db
 ```
 
 This creates:
@@ -119,7 +123,7 @@ Status source of truth:
 
 ### 2. Dispatch Discovery
 
-Use `delegate_task` with the contents of `prompts/discover_stories.md`.
+Use `delegate_task` with the contents of `references/prompts/discover_stories.md`.
 
 The discovery agent reads source files and returns a JSON manifest. It decides:
 
@@ -133,7 +137,7 @@ The discovery agent reads source files and returns a JSON manifest. It decides:
 The parent then writes pending entries through the DB tool:
 
 ```bash
-python3 ~/.hermes/skills/creative/literary-composition-engine/scripts/corpus_db.py load-manifest \
+python3 ${HERMES_SKILL_DIR}/scripts/corpus_db.py load-manifest \
   --db corpus/<author>.db \
   --manifest runs/<author>/<run_id>/manifest.json
 ```
@@ -145,7 +149,7 @@ Hermes `delegate_task` uses the configured `delegation.max_concurrent_children` 
 Get pending work:
 
 ```bash
-python3 ~/.hermes/skills/creative/literary-composition-engine/scripts/corpus_db.py list \
+python3 ${HERMES_SKILL_DIR}/scripts/corpus_db.py list \
   --db corpus/<author>.db \
   --status pending
 ```
@@ -160,12 +164,12 @@ Each extraction subagent receives:
 - required artifact JSON schema
 - output path under `runs/<author>/<run_id>/extracted/`
 
-Use `prompts/extract_story.md`.
+Use `references/prompts/extract_story.md`.
 
 The parent persists a completed extraction:
 
 ```bash
-python3 ~/.hermes/skills/creative/literary-composition-engine/scripts/corpus_db.py ingest-story \
+python3 ${HERMES_SKILL_DIR}/scripts/corpus_db.py ingest-story \
   --db corpus/<author>.db \
   --story-json runs/<author>/<run_id>/extracted/<story_id>.json
 ```
@@ -174,8 +178,8 @@ python3 ~/.hermes/skills/creative/literary-composition-engine/scripts/corpus_db.
 
 If an extraction has low confidence or visible source problems, dispatch cleanup/validation agents using:
 
-- `prompts/cleanup_story.md`
-- `prompts/validate_story.md`
+- `references/prompts/cleanup_story.md`
+- `references/prompts/validate_story.md`
 
 Agents decide whether the result is `done` or `needs_review`. The DB tool only records that decision.
 
@@ -193,7 +197,7 @@ Epigraphs, dedications, authorial date lines, and other authorial paratext insid
 After all accepted stories are persisted, rebuild sentence rows:
 
 ```bash
-python3 ~/.hermes/skills/creative/literary-composition-engine/scripts/corpus_db.py rebuild-sentences \
+python3 ${HERMES_SKILL_DIR}/scripts/corpus_db.py rebuild-sentences \
   --db corpus/<author>.db
 ```
 
@@ -206,8 +210,8 @@ time for a specific planned target sentence.
 After all stories are `done`:
 
 ```bash
-python3 ~/.hermes/skills/creative/literary-composition-engine/scripts/corpus_db.py rebuild-fts --db corpus/<author>.db
-python3 ~/.hermes/skills/creative/literary-composition-engine/scripts/corpus_db.py report --db corpus/<author>.db
+python3 ${HERMES_SKILL_DIR}/scripts/corpus_db.py rebuild-fts --db corpus/<author>.db
+python3 ${HERMES_SKILL_DIR}/scripts/corpus_db.py report --db corpus/<author>.db
 ```
 
 Do not discard `ingestion_log` until the corpus has been manually spot-checked.
@@ -324,7 +328,7 @@ Rules:
 
 ## Phase 2: Author Pack Construction
 
-Use `prompts/run_phase2_author_pack.md` to build `author-models/<author>/` from the approved corpus. Run one card agent per required card whenever runtime concurrency permits.
+Use `references/prompts/run_phase2_author_pack.md` to build `author-models/<author>/` from the approved corpus. Run one card agent per required card whenever runtime concurrency permits.
 
 Required outputs:
 
@@ -345,7 +349,7 @@ Rules:
 
 ## Phase 3: Artifact Validation & Calibration
 
-Use `prompts/run_phase3_validation.md` to validate the author pack before writing.
+Use `references/prompts/run_phase3_validation.md` to validate the author pack before writing.
 
 Required validated outputs:
 
@@ -370,7 +374,7 @@ performed in Phase 4 from real corpus sentences, after a concrete
 
 ## Phase 4: Writing Runtime
 
-Use `prompts/run_phase4_writing_runtime.md`. The production method is
+Use `references/prompts/run_phase4_writing_runtime.md`. The production method is
 **sentence-by-sentence literal source anchoring**. The old
 `sentence_patterns`/`structural_pattern_anchor` idea is not a production mode,
 not a retrieval layer, and not valid release evidence.
@@ -479,7 +483,7 @@ operation explicitly.
 ### Sentence Anchor Final Repair Pass
 
 Before paragraph release, run
-`prompts/run_phase4_sentence_anchor_repair_pass.md`. This pass audits every
+`references/prompts/run_phase4_sentence_anchor_repair_pass.md`. This pass audits every
 target/source sentence pair by rhetorical operation, not by punctuation or
 sentence length. It must write `sentence_anchor.final_audit.yaml` and
 `final.anchor.lock.yaml` for every paragraph.
@@ -500,7 +504,7 @@ observation, inference from material detail, or closing warning.
 ### Phase 4.5 Final Text Repair Gate
 
 After `story.audit.report.yaml` and `final.output.yaml`, but before
-`final.release.yaml`, run `prompts/run_phase45_final_text_repair.md`.
+`final.release.yaml`, run `references/prompts/run_phase45_final_text_repair.md`.
 
 This gate is not a beauty pass. It may only repair concrete local findings:
 
@@ -599,7 +603,7 @@ Audit must block release if:
 After a Phase 4 run, Hermes must execute:
 
 ```bash
-python3 ~/.hermes/skills/creative/literary-composition-engine/scripts/validate_phase4_run.py \
+python3 ${HERMES_SKILL_DIR}/scripts/validate_phase4_run.py \
   --run-dir runs/<author>/<run_id> \
   --paragraph-count <N> \
   --min-total-words <floor_from_length_selection> \

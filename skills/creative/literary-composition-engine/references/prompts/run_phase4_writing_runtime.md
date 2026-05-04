@@ -41,8 +41,8 @@ Workflow:
    - create `source_to_target_alignment_plan`;
    - write `paragraph.rewrite.plan.yaml`;
    - generate `candidate.output.yaml`;
-   - run independent sentence anchor audit using `prompts/audit_phase4_sentence_anchor.md`;
-   - run the final sentence-anchor repair pass using `prompts/run_phase4_sentence_anchor_repair_pass.md`;
+   - run independent sentence anchor audit using `references/prompts/audit_phase4_sentence_anchor.md`;
+   - run the final sentence-anchor repair pass using `references/prompts/run_phase4_sentence_anchor_repair_pass.md`;
    - run paragraph audit;
    - repair/replan until no blockers;
    - write `final.anchor.lock.yaml`;
@@ -51,12 +51,12 @@ Workflow:
 8. Assemble released paragraphs in `story.assembly.yaml` without rewriting them.
 9. Audit the story globally in `story.audit.report.yaml`.
 10. Write `final.output.yaml` with `final_text`, paragraph refs, provenance, warnings.
-11. Run Phase 4.5 final text repair with `prompts/run_phase45_final_text_repair.md`.
+11. Run Phase 4.5 final text repair with `references/prompts/run_phase45_final_text_repair.md`.
 12. Write `final.release.yaml`, pointing to `final.output.yaml` or `final.repaired.output.yaml`.
 13. Run mechanical validation:
 
 ```bash
-python3 ~/.hermes/skills/creative/literary-composition-engine/scripts/validate_phase4_run.py \
+python3 ${HERMES_SKILL_DIR}/scripts/validate_phase4_run.py \
   --run-dir runs/<author_id>/<run_id> \
   --paragraph-count <N> \
   --min-total-words <floor_from_length_selection> \
@@ -194,7 +194,7 @@ actual architecture.
 Final sentence-anchor repair pass:
 
 After `candidate.output.yaml` and the first independent sentence anchor audit,
-run `prompts/run_phase4_sentence_anchor_repair_pass.md`. This pass must not
+run `references/prompts/run_phase4_sentence_anchor_repair_pass.md`. This pass must not
 restart the story. It audits each final sentence against its selected literal
 source sentence and classifies the anchor:
 

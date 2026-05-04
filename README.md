@@ -50,7 +50,9 @@ The experiment asks whether style can be treated as a set of decomposable, teach
 ```text
 skills/creative/literary-composition-engine/
   SKILL.md
-  prompts/
+  references/
+    prompts/
+    artifact-schemas.md
   scripts/
 
 examples/lovecraft/
