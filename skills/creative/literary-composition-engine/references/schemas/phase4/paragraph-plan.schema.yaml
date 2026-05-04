@@ -1,0 +1,77 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/paragraph.plan.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Define what each paragraph must do before prose generation."
+  required_top_level:
+    - "paragraph_plan"
+  schema:
+    paragraph_plan:
+      run_id: ""
+      paragraph_count: null
+      paragraphs:
+        - paragraph_id: "p001"
+          paragraph_function: ""
+          content_to_cover:
+            - ""
+          meaning_to_preserve_within_paragraph:
+            - ""
+          continuity_dependencies:
+            must_respect:
+              - ""
+            must_not_introduce:
+              - ""
+          knowledge_state:
+            before: ""
+            after: ""
+            what_reader_must_learn:
+              - ""
+            what_reader_must_not_learn_yet:
+              - ""
+          human_stakes:
+            local_stakes: ""
+            emotional_boundary: ""
+            prohibited_emotional_moves:
+              - ""
+          theme_cards:
+            activate:
+              - card: ""
+                reason: ""
+                do: ""
+                not_do: ""
+            block:
+              - card: ""
+                reason: ""
+                not_do: ""
+          style_cards:
+            activate:
+              - card: ""
+                reason: ""
+                do: ""
+                not_do: ""
+            block:
+              - card: ""
+                reason: ""
+                not_do: ""
+          symbolic_policy:
+            allowed_operators: []
+            blocked_operators:
+              - operator_name: ""
+                reason: ""
+          sentence_count_plan:
+            planned_sentence_count: null
+            reason: ""
+            may_change_if:
+              - ""
+            must_not_change_for:
+              - "ornamentation"
+              - "pastiche"
+          sentence_roles:
+            - sentence_id: ""
+              role: ""
+          release_requirements:
+            - ""
+  must_not:
+    - "Do not use vague paragraph functions such as 'open the scene' without concrete action/content."
+    - "Do not activate all cards in all paragraphs."
+    - "Do not activate symbolic_operations without local affordance."
+

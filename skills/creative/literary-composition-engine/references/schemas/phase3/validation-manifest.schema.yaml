@@ -1,0 +1,40 @@
+schema_contract:
+  artifact: "author-models/<author>/phase3-validation/validation.manifest.yaml"
+  phase: "phase_3_artifact_validation"
+  purpose: "Record exactly which artifacts are being validated."
+  required_top_level:
+    - "validation_manifest"
+  schema:
+    validation_manifest:
+      phase: "phase_3_artifact_validation_and_calibration"
+      author_id: ""
+      validation_run_id: ""
+      input_artifacts:
+        theme_contract:
+          path: "author-models/<author>/theme.contract.yaml"
+          file_hash: ""
+        style_contract:
+          path: "author-models/<author>/style.contract.yaml"
+          file_hash: ""
+        evidence_notes:
+          path: "author-models/<author>/evidence.notes.yaml"
+          file_hash: ""
+        corpus_db:
+          path: "corpus/<author>.db"
+          file_hash: ""
+      agents_scheduled:
+        - "schema_and_completeness"
+        - "claim_extraction"
+        - "evidence_grounding"
+        - "counterexample_and_generalization"
+        - "operationality"
+        - "inter_card_coherence"
+        - "anti_pastiche"
+        - "activation_fixture"
+        - "coverage"
+        - "calibration_patch"
+      generation_allowed_during_phase_3: false
+  must_not:
+    - "Do not validate untracked or unhashed input artifacts."
+    - "Do not allow generation during Phase 3."
+

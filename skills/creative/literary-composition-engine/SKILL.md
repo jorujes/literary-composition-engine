@@ -68,6 +68,7 @@ Inside this skill:
 scripts/corpus_db.py                      # mechanical SQLite tool
 scripts/validate_phase4_run.py            # mechanical Phase 4 release validator
 references/artifact-schemas.md            # generated artifact locations and required files
+references/schemas/                       # contract schemas for generated artifacts
 references/prompts/discover_stories.md    # discovery agent prompt
 references/prompts/extract_story.md       # extraction agent prompt
 references/prompts/cleanup_story.md       # cleanup agent prompt
@@ -82,6 +83,12 @@ references/prompts/run_phase45_final_text_repair.md  # story-level final text re
 
 Generated DBs, YAML author packs, validation reports, and run artifacts belong
 in the user's active workspace. See `references/artifact-schemas.md`.
+
+Before writing any generated YAML or JSON artifact, load the relevant schema
+from `references/schemas/`. Do not invent fields when the schema already
+provides a place for the information. Do not add arbitrary numeric style scores,
+similarity scores, strength values, or confidence values unless the schema
+explicitly calls for mechanical corpus metadata.
 
 ## Phase 1 Workflow
 
@@ -176,7 +183,9 @@ python3 ${HERMES_SKILL_DIR}/scripts/corpus_db.py ingest-story \
 
 ### 4. Cleanup and Validation
 
-If an extraction has low confidence or visible source problems, dispatch cleanup/validation agents using:
+If an extraction has visible source problems, missing boundaries, duplicate
+metadata, or an explicit `needs_review` recommendation, dispatch
+cleanup/validation agents using:
 
 - `references/prompts/cleanup_story.md`
 - `references/prompts/validate_story.md`
@@ -252,7 +261,6 @@ Extraction and cleanup agents must write JSON shaped like:
   "source_file": "sources/lovecraft/source.txt",
   "pub_year": 1928,
   "status": "done",
-  "confidence": 0.94,
   "reason": "Complete story extracted; editorial intro excluded.",
   "paragraphs": [
     "First paragraph...",
@@ -284,7 +292,7 @@ or:
 1. **Letting Python become a parser.** If a decision requires reading judgment, use an agent.
 2. **Overloading one subagent.** One extraction target per subagent. Batch according to `delegation.max_concurrent_children`.
 3. **Under-specifying context.** Child agents start fresh. Give exact source path, target title, expected output path, and exclusion rules.
-4. **Trusting confidence alone.** Low word count, duplicate titles, and missing source references still need review.
+4. **Trusting labels alone.** Short extracts, duplicate titles, missing source references, or weak boundary explanations still need review.
 5. **Discarding logs too early.** Keep `ingestion_log` and run artifacts until the corpus is spot-checked.
 
 ## Verification Checklist

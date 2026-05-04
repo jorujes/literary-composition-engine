@@ -1,0 +1,56 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/paragraphs/<pid>/source_sentence_anchor.selection.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Select one real source sentence as the formal machine for each planned target sentence."
+  required_top_level:
+    - "source_sentence_anchor_selection"
+    - "source_to_target_alignment_plan"
+  schema:
+    source_sentence_anchor_selection:
+      paragraph_id: ""
+      planned_sentences:
+        - sentence_id: ""
+          semantic_payload_ref: ""
+          target_semantic_job: ""
+          selected_source_sentence_ref:
+            story_id: ""
+            sentence_id: null
+            paragraph_position: null
+            sentence_position: null
+            source_text_hash: ""
+          selected_source_sentence_text: ""
+          candidate_source_sentences_considered:
+            - source_sentence_ref: {}
+              source_sentence_text: ""
+              useful_formal_features_in_this_exact_sentence:
+                - ""
+              rejection_reason: ""
+          source_sentence_parts:
+            - part_id: "src_001"
+              source_words_or_span: ""
+              formal_job: ""
+          target_payload_slots:
+            - slot_id: "tgt_001"
+              planned_content: ""
+              must_fit_source_part: "src_001"
+          why_this_exact_sentence_is_necessary: ""
+    source_to_target_alignment_plan:
+      - alignment_ref: ""
+        sentence_id: ""
+        source_sentence_ref: {}
+        source_sentence_text: ""
+        target_semantic_job: ""
+        source_to_target_part_map:
+          - source_words_or_span: ""
+            source_formal_job: ""
+            target_planned_content: ""
+            target_formal_job: ""
+        must_preserve_from_source_form:
+          - ""
+        must_not_copy_from_source_semantics:
+          - ""
+  must_not:
+    - "Do not use sentence_pattern ids, skeletons, or extracted pattern descriptions."
+    - "Do not choose source sentences sequentially without local necessity."
+    - "Do not copy source content, images, names, conclusions, or memorable phrasing."
+

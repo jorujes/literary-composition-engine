@@ -1,0 +1,52 @@
+schema_contract:
+  artifact: "author-models/<author>/style.contract.yaml"
+  phase: "phase_2_author_pack_construction"
+  purpose: "Persistent style contract for the author pack."
+  required_top_level:
+    - "style_contract"
+  required_cards:
+    - "narration_contract"
+    - "thought_progression"
+    - "sentence_making"
+    - "diction_and_microchoices"
+  schema:
+    style_contract:
+      author_id: ""
+      contract_version: ""
+      style_cards:
+        narration_contract: {}
+        thought_progression: {}
+        sentence_making:
+          card_id: "style.sentence_making"
+          sentence_families:
+            - name: ""
+              description: ""
+              use_when_source_has:
+                - ""
+              do_not_use_when:
+                - ""
+              how_to_build: ""
+              do_not_confuse_with: ""
+              failure_signs:
+                - ""
+              repair_moves:
+                - ""
+        diction_and_microchoices:
+          card_id: "style.diction_and_microchoices"
+          preferred_word_behaviors:
+            - ""
+          avoided_word_behaviors:
+            - ""
+          high_risk_words_or_moves:
+            - item: ""
+              allowed_only_if: ""
+              otherwise_do: ""
+      contract_level_prohibitions:
+        - ""
+      evidence_policy:
+        claims_without_evidence: "hypothesis_not_for_generation"
+  must_not:
+    - "Do not define syntax by sentence length alone."
+    - "Do not define diction as a wordlist."
+    - "Do not use tone as a root command."
+

@@ -1,0 +1,48 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/manifest.json"
+  phase: "phase_1_corpus_preparation"
+  purpose: >
+    Record which works were discovered in the raw source files and which story
+    extraction tasks must be created.
+  required_top_level:
+    - "author_id"
+    - "source_files"
+    - "discovered_stories"
+    - "excluded_items"
+    - "discovery_findings"
+  schema:
+    author_id: ""
+    source_files:
+      - path: ""
+        file_type: ""
+        source_note: ""
+    discovered_stories:
+      - story_id: ""
+        title: ""
+        collection: ""
+        pub_year: null
+        source_file: ""
+        source_order: null
+        extraction_priority: "normal"
+        boundary_notes: ""
+        risks:
+          - ""
+    excluded_items:
+      - item_label: ""
+        source_file: ""
+        reason_excluded: ""
+    discovery_findings:
+      - finding_id: ""
+        finding_type: "clean | needs_review"
+        explanation: ""
+  allowed_values:
+    discovered_stories.extraction_priority:
+      - "normal"
+      - "needs_attention"
+    discovery_findings.finding_type:
+      - "clean"
+      - "needs_review"
+  must_not:
+    - "Do not mark a story done; discovery only creates extraction tasks."
+    - "Do not invent publication metadata if the source does not provide it."
+

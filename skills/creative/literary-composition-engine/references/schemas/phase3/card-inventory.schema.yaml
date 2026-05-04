@@ -1,0 +1,26 @@
+schema_contract:
+  artifact: "author-models/<author>/phase3-validation/card.inventory.yaml"
+  phase: "phase_3_artifact_validation"
+  purpose: "Verify required card presence and required operational sections."
+  required_top_level:
+    - "card_inventory"
+  schema:
+    card_inventory:
+      author_id: ""
+      cards:
+        - card_id: ""
+          source_file: ""
+          source_path: ""
+          present: false
+          required_sections_present:
+            - ""
+          missing_required_sections:
+            - ""
+          structural_findings:
+            - finding_id: ""
+              gate_role: "blocking | calibration_required | human_review_required | warning"
+              explanation: ""
+  must_not:
+    - "Do not mark an absent required card as a warning."
+    - "Do not treat examples as optional for generation-relevant cards."
+

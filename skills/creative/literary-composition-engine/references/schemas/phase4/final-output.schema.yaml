@@ -1,0 +1,32 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/final.output.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Store the assembled story candidate after paragraph release and story audit."
+  required_top_level:
+    - "final_output"
+  schema:
+    final_output:
+      run_id: ""
+      author_id: ""
+      title: ""
+      final_text: ""
+      paragraph_refs:
+        - "paragraphs/p001/final.paragraph.yaml"
+      generation_basis:
+        request_ref: "writing.request.yaml"
+        outline_ref: "outline.selection.yaml"
+        blueprint_ref: "story.blueprint.yaml"
+        paragraph_plan_ref: "paragraph.plan.yaml"
+        author_pack_ref: "author.pack.lock.yaml"
+      release_checks:
+        paragraph_releases_complete: true
+        story_audit_passed: true
+        no_blockers_remaining: true
+        phase4_flags_respected: true
+      warnings:
+        - ""
+      provenance_note: ""
+  must_not:
+    - "Do not use only a legacy text field; final_text is required."
+    - "Do not add unplanned closing paragraphs during assembly."
+

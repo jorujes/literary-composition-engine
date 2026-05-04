@@ -1,0 +1,43 @@
+schema_contract:
+  artifact_group:
+    - "final.paragraph.yaml"
+    - "paragraph.release.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Lock a paragraph after audit and repair."
+  final_paragraph_schema:
+    final_paragraph:
+      run_id: ""
+      paragraph_id: ""
+      final_text: ""
+      release_basis:
+        final_candidate_id: ""
+        final_audit_ref: "audit.report.yaml"
+      semantic_units_preserved:
+        - ""
+      facts_established:
+        - ""
+      continuity_updates:
+        - ""
+      symbols_or_operators_used:
+        - operator_name: ""
+          semantic_job: ""
+          authorized_by: ""
+      paragraph_locked: true
+  paragraph_release_schema:
+    paragraph_release:
+      run_id: ""
+      paragraph_id: ""
+      release_status: "released | blocked"
+      delivered_to_user: false
+      blockers:
+        - ""
+      warnings:
+        - warning_id: ""
+          explanation: ""
+      allowed_future_changes:
+        - "copyediting only if it does not alter meaning"
+        - "substantive revision only with revision notice"
+  must_not:
+    - "Do not release paragraphs with blockers."
+    - "Do not revise released paragraphs silently."
+

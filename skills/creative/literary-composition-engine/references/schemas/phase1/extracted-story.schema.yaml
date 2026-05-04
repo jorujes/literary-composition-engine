@@ -1,0 +1,44 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/extracted/<story_id>.json"
+  phase: "phase_1_corpus_preparation"
+  purpose: >
+    Store one LLM-extracted story as structured text ready for cleanup and
+    validation. Python may persist this only after validation approves it.
+  required_top_level:
+    - "story_id"
+    - "title"
+    - "collection"
+    - "pub_year"
+    - "source_file"
+    - "paragraphs"
+    - "extraction_notes"
+    - "status_recommendation"
+  schema:
+    story_id: ""
+    title: ""
+    collection: ""
+    pub_year: null
+    source_file: ""
+    paragraphs:
+      - position: 1
+        text: ""
+        source_location_note: ""
+    extraction_notes:
+      boundary_decisions:
+        - ""
+      excluded_material:
+        - source_span_or_label: ""
+          reason: ""
+      risks:
+        - ""
+    status_recommendation: "done | needs_review"
+    reason: ""
+  allowed_values:
+    status_recommendation:
+      - "done"
+      - "needs_review"
+  must_not:
+    - "Do not include publisher/editor/translator material as story text unless the validation agent identifies it as authorial story material."
+    - "Do not mechanically strip epigraphs, dedications, or authorial date lines without explanation."
+    - "Do not use parser heuristics as the reason for boundary decisions."
+

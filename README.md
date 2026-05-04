@@ -53,6 +53,7 @@ skills/creative/literary-composition-engine/
   references/
     prompts/
     artifact-schemas.md
+    schemas/
   scripts/
 
 examples/lovecraft/

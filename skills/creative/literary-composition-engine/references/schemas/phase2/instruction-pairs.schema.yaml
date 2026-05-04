@@ -1,0 +1,32 @@
+schema_contract:
+  artifact: "author-models/<author>/instruction.pairs.yaml"
+  phase: "phase_2_or_phase_3_bridge"
+  purpose: "Compile executable do/not_do units for Phase 4."
+  required_top_level:
+    - "instruction_pairs"
+  schema:
+    instruction_pairs:
+      - pair_id: ""
+        card: ""
+        source_do_path: ""
+        do: ""
+        source_not_do_path: ""
+        not_do: ""
+        use_when_source_has:
+          - ""
+        do_not_use_when:
+          - ""
+        failure_signs:
+          - ""
+        repair_moves:
+          - ""
+        validation_state: "supported | supported_with_narrow_scope"
+  allowed_values:
+    instruction_pairs.validation_state:
+      - "supported"
+      - "supported_with_narrow_scope"
+  must_not:
+    - "Do not include hypothesis_not_for_generation claims."
+    - "Do not include a do without a paired not_do."
+    - "Do not include a failure_sign without repair_moves."
+

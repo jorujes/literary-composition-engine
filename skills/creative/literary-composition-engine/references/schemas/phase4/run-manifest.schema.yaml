@@ -1,0 +1,30 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/run.manifest.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Track run state, checkpoints, generated files, and blockers."
+  required_top_level:
+    - "run_manifest"
+  schema:
+    run_manifest:
+      run_id: ""
+      author_id: ""
+      phase: "phase_4_writing_runtime"
+      run_status: "initialized | running | blocked | completed"
+      writing_mode: ""
+      user_interaction_checkpoints:
+        outline_selection_required: false
+        length_selection_required: false
+        blueprint_approval_required: false
+        paragraph_delivery_mode: ""
+      input_files:
+        writing_request: "writing.request.yaml"
+      generated_files:
+        - ""
+      generation_allowed: false
+      generation_allowed_reason: ""
+      blocking_conditions:
+        - ""
+      current_stage: ""
+  must_not:
+    - "Do not mark run completed before final.release.yaml is released."
+

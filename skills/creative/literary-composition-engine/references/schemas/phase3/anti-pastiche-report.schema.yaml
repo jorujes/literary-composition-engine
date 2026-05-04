@@ -1,0 +1,23 @@
+schema_contract:
+  artifact: "author-models/<author>/phase3-validation/anti_pastiche.report.yaml"
+  phase: "phase_3_artifact_validation"
+  purpose: "Block decorative symbolism, wordlists, metric syntax, and tone labels."
+  required_top_level:
+    - "anti_pastiche_report"
+  schema:
+    anti_pastiche_report:
+      author_id: ""
+      findings:
+        - finding_id: ""
+          card: ""
+          source_path: ""
+          risk_kind: "symbol_as_wordlist | lexicon_as_wordlist | syntax_as_metric | tone_as_command | signature_token_stuffing"
+          observed_problem: ""
+          why_this_is_pastiche_risk: ""
+          required_repair: ""
+          gate_role: "blocking | calibration_required | human_review_required | warning"
+  must_not:
+    - "Do not approve symbols that can be removed without semantic loss."
+    - "Do not approve lexicon sections that only list preferred words."
+    - "Do not approve syntax rules defined only by sentence length."
+

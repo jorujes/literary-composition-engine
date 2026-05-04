@@ -1,0 +1,56 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/paragraphs/<pid>/audit.report.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Audit candidate paragraph before release or repair."
+  required_top_level:
+    - "audit_report"
+  schema:
+    audit_report:
+      run_id: ""
+      paragraph_id: ""
+      candidate_id: ""
+      overall_finding: "passed | needs_repair | failed"
+      semantic_preservation:
+        finding: "preserved | partially_preserved | failed"
+        explanation: ""
+        preserved_units:
+          - ""
+        altered_or_missing_units:
+          - ""
+        invented_content:
+          - ""
+      continuity_check:
+        finding: "passed | needs_repair | failed"
+        explanation: ""
+        contradictions_found:
+          - ""
+      theme_application:
+        finding: "passed | needs_repair | failed"
+        successful_moves:
+          - card: ""
+            explanation: ""
+        problematic_moves:
+          - card: ""
+            explanation: ""
+      style_application:
+        finding: "passed | needs_repair | failed"
+        successful_moves:
+          - card: ""
+            explanation: ""
+        problematic_moves:
+          - card: ""
+            explanation: ""
+      anti_pastiche_check:
+        finding: "passed | needs_repair | failed"
+        issues:
+          - issue_type: "symbol_as_decoration | lexicon_as_wordlist | syntax_as_metric | tone_label | signature_token_stuffing"
+            description: ""
+            repair_needed: ""
+      root_cause_classification:
+        primary_root_cause: "paraphraser_failure | rewrite_plan_failure | neutral_draft_failure | paragraph_plan_failure | contract_failure | user_or_human_decision_required"
+        explanation: ""
+      required_next_action: "repair_candidate | replan_rewrite | regenerate_neutral | revise_paragraph_plan | block_and_return_to_phase3 | request_user_or_human_decision | release"
+  must_not:
+    - "Do not approve because text sounds authorial."
+    - "Do not ignore semantic drift."
+

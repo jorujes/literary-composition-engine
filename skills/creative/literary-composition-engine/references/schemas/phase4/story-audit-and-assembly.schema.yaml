@@ -1,0 +1,52 @@
+schema_contract:
+  artifact_group:
+    - "story.assembly.yaml"
+    - "story.audit.report.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Assemble released paragraphs and audit global story coherence."
+  story_assembly_schema:
+    story_assembly:
+      run_id: ""
+      paragraphs_in_order:
+        - paragraph_id: ""
+          final_paragraph_ref: ""
+      assembled_text: ""
+      assembly_rules:
+        - "do not alter released paragraphs"
+        - "do not add unplanned paragraphs"
+        - "do not repair style globally without audit"
+  story_audit_report_schema:
+    story_audit_report:
+      run_id: ""
+      overall_finding: "passed | needs_repair | blocked"
+      blueprint_fulfillment:
+        finding: ""
+        explanation: ""
+        missing_blueprint_elements:
+          - ""
+      global_continuity:
+        finding: ""
+        explanation: ""
+        contradictions:
+          - ""
+      progression_check:
+        finding: ""
+        explanation: ""
+        paragraph_progression_issues:
+          - ""
+      accumulated_pastiche_check:
+        finding: ""
+        explanation: ""
+        repeated_signature_tokens:
+          - ""
+        symbolic_overload:
+          - ""
+      ending_check:
+        finding: ""
+        explanation: ""
+        ending_matches_blueprint: false
+      required_next_action: "release | repair_specific_paragraph | request_user_revision_decision | block"
+  must_not:
+    - "Do not add a new ending during assembly."
+    - "Do not alter released paragraphs without a revision notice."
+

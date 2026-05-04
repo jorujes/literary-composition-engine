@@ -1,0 +1,66 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/story.blueprint.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Freeze the story's causal truth before paragraph drafting."
+  required_top_level:
+    - "story_blueprint"
+  schema:
+    story_blueprint:
+      run_id: ""
+      author_id: ""
+      selected_outline_id: ""
+      paragraph_count: null
+      blueprint_status: "locked_for_paragraph_planning"
+      story_premise: ""
+      central_question: ""
+      central_disturbance: ""
+      final_state_promised: ""
+      narrator_contract:
+        narrator_identity_or_role: ""
+        reason_for_narrating: ""
+        knowledge_limits: ""
+        institutional_or_experiential_position: ""
+      characters:
+        - character_id: ""
+          role: ""
+          known_facts:
+            - ""
+          agency_condition: ""
+          knowledge_condition: ""
+          emotional_boundary: ""
+      causal_chain:
+        - step_id: ""
+          event_or_realization: ""
+          caused_by: ""
+          causes: ""
+      knowledge_arc:
+        initial_knowledge_state: ""
+        intermediate_discoveries:
+          - ""
+        final_knowledge_state: ""
+      human_stakes_arc:
+        opening_stakes: ""
+        pressure_or_loss: ""
+        final_human_position: ""
+      symbolic_policy:
+        allowed_operators:
+          - operator_name: ""
+            use_only_when: ""
+            semantic_job: ""
+        blocked_operators:
+          - operator_name: ""
+            reason_blocked: ""
+        global_symbol_rule: ""
+      invention_limits:
+        major_new_events_allowed_after_blueprint: false
+        local_detail_invention_allowed: true
+        local_detail_rules:
+          - ""
+      phase4_flags_to_apply:
+        - flag_id: ""
+          instruction: ""
+  must_not:
+    - "Do not leave narrator as a purely stylistic voice."
+    - "Do not allow major events after blueprint unless explicitly approved."
+    - "Do not authorize symbols globally without local paragraph affordance."
+

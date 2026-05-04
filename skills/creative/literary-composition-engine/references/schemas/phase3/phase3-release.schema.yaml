@@ -1,0 +1,33 @@
+schema_contract:
+  artifact: "author-models/<author>/phase3-validation/phase3.release.yaml"
+  phase: "phase_3_artifact_validation"
+  purpose: "Formal gate consumed by Phase 4."
+  required_top_level:
+    - "phase3_release"
+  schema:
+    phase3_release:
+      author_id: ""
+      validation_run_id: ""
+      release_status: "released | not_released"
+      generation_allowed_for_phase_4: false
+      approved_artifacts:
+        - "validated/theme.contract.yaml"
+        - "validated/style.contract.yaml"
+        - "validated/evidence.notes.yaml"
+        - "validated/instruction.pairs.yaml"
+      pending_actions:
+        - action_type: "return_to_card_agent | human_review | revalidation"
+          target: ""
+      phase4_flags:
+        - flag_id: ""
+          instruction: ""
+      blocking_conditions:
+        - ""
+  allowed_values:
+    phase3_release.release_status:
+      - "released"
+      - "not_released"
+  must_not:
+    - "Do not set generation_allowed_for_phase_4 true unless release_status is released."
+    - "Do not approve root candidate contracts; approve only validated artifacts."
+

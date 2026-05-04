@@ -1,0 +1,47 @@
+schema_contract:
+  artifact: "author-models/<author>/phase3-validation/claim.registry.yaml"
+  phase: "phase_3_artifact_validation"
+  purpose: "Turn contract prose into validatable claims."
+  required_top_level:
+    - "claim_registry"
+  schema:
+    claim_registry:
+      author_id: ""
+      extracted_from:
+        - "theme.contract.yaml"
+        - "style.contract.yaml"
+      claims:
+        - claim_id: ""
+          source_file: ""
+          source_path: ""
+          card: ""
+          claim_type: "author_behavior"
+          claim_text: ""
+          generation_relevance: "used_to_guide_generation"
+          evidence_requirement: "must_be_supported"
+          current_validation_state: "unvalidated"
+  allowed_values:
+    claims.claim_type:
+      - "author_behavior"
+      - "generation_rule"
+      - "prohibition"
+      - "symbolic_operator_function"
+      - "boundary_rule"
+      - "example_interpretation"
+    claims.generation_relevance:
+      - "used_to_guide_generation"
+      - "used_to_block_generation"
+      - "explanation_only"
+      - "hypothesis_not_for_generation"
+    claims.current_validation_state:
+      - "unvalidated"
+      - "supported"
+      - "supported_with_narrow_scope"
+      - "hypothesis_only"
+      - "unsupported"
+      - "contradicted"
+      - "evidence_misused"
+  must_not:
+    - "Do not allow hypothesis_not_for_generation claims into instruction pairs."
+    - "Do not omit source_path for generation-relevant claims."
+

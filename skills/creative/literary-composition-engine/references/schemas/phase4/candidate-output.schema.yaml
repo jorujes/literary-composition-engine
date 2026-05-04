@@ -1,0 +1,37 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/paragraphs/<pid>/candidate.output.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Store one candidate paragraph and map each final sentence to source anchors and semantic units."
+  required_top_level:
+    - "candidate_output"
+  schema:
+    candidate_output:
+      run_id: ""
+      paragraph_id: ""
+      candidate_id: ""
+      candidate_text: ""
+      sentence_mapping:
+        - sentence_id: ""
+          output_sentence: ""
+          intended_semantic_job: ""
+          source_semantic_units:
+            - ""
+          source_sentence_ref: {}
+          source_anchor_alignment_ref: ""
+      declared_transformations:
+        - card: ""
+          instruction_pair_id: ""
+          explanation: ""
+      declared_non_uses:
+        - card: ""
+          explanation: ""
+      self_audit:
+        semantic_preservation: ""
+        no_new_content: ""
+        banned_outputs_checked: ""
+        source_sentence_fidelity: ""
+  must_not:
+    - "Do not omit sentence_mapping."
+    - "Do not include final prose labels copied from neutral drafts."
+    - "Do not invent source anchors after the candidate text is written."
+

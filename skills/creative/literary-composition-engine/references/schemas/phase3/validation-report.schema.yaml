@@ -1,0 +1,50 @@
+schema_contract:
+  artifact: "author-models/<author>/phase3-validation/validation.report.yaml"
+  phase: "phase_3_artifact_validation"
+  purpose: "Aggregate validation findings and decide whether Phase 4 is blocked."
+  required_top_level:
+    - "validation_report"
+  schema:
+    validation_report:
+      author_id: ""
+      validation_run_id: ""
+      overall_gate_status: "passed | passed_with_runtime_flags | failed_requires_calibration | failed_requires_human_review"
+      summary:
+        passed_checks:
+          - ""
+        blocking_findings:
+          - finding_id: ""
+            source_file: ""
+            explanation: ""
+        calibration_required:
+          - patch_id: ""
+            explanation: ""
+        human_review_required:
+          - review_id: ""
+            explanation: ""
+        warnings:
+          - warning_id: ""
+            explanation: ""
+      artifact_outputs:
+        card_inventory: "card.inventory.yaml"
+        claim_registry: "claim.registry.yaml"
+        evidence_trace: "evidence.trace.yaml"
+        operationality_report: "operationality.report.yaml"
+        anti_pastiche_report: "anti_pastiche.report.yaml"
+        contract_conflicts: "contract.conflicts.yaml"
+        activation_test_report: "activation.test.report.yaml"
+        coverage_report: "coverage.report.yaml"
+        calibration_patch: "calibration.patch.yaml"
+        human_review_queue: "human.review.queue.yaml"
+      generation_blocked: true
+      reason_generation_blocked: ""
+  allowed_values:
+    validation_report.overall_gate_status:
+      - "passed"
+      - "passed_with_runtime_flags"
+      - "failed_requires_calibration"
+      - "failed_requires_human_review"
+  must_not:
+    - "Do not use numeric scores as the gate."
+    - "Do not mark generation unblocked when blocking_findings or human_review_required remain unresolved."
+

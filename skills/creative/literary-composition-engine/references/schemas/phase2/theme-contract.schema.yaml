@@ -1,0 +1,43 @@
+schema_contract:
+  artifact: "author-models/<author>/theme.contract.yaml"
+  phase: "phase_2_author_pack_construction"
+  purpose: "Persistent thematic contract for the author pack."
+  required_top_level:
+    - "theme_contract"
+  required_cards:
+    - "world_rules"
+    - "knowledge_path"
+    - "human_stakes"
+    - "symbolic_operations"
+  schema:
+    theme_contract:
+      author_id: ""
+      contract_version: ""
+      theme_cards:
+        world_rules: {}
+        knowledge_path: {}
+        human_stakes: {}
+        symbolic_operations:
+          card_id: "theme.symbolic_operations"
+          operators:
+            - name: ""
+              plain_description: ""
+              semantic_job: ""
+              use_when_source_has:
+                - ""
+              do_not_use_when:
+                - ""
+              decorative_misuses:
+                - ""
+              allowed_substitutions:
+                - ""
+              repair_if_decorative: ""
+      contract_level_prohibitions:
+        - ""
+      evidence_policy:
+        claims_without_evidence: "hypothesis_not_for_generation"
+  must_not:
+    - "Do not include decorative symbols without semantic_job."
+    - "Do not allow symbolic operators without use_when_source_has and do_not_use_when."
+    - "Do not promote hypotheses into generation rules."
+

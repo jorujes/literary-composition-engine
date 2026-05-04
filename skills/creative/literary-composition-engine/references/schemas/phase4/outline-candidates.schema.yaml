@@ -1,0 +1,59 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/outline.candidates.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Offer contract-compatible outlines for user selection."
+  required_top_level:
+    - "outline_candidates"
+  schema:
+    outline_candidates:
+      run_id: ""
+      author_id: ""
+      generation_basis:
+        request_mode: ""
+        user_constraints_used:
+          - ""
+        contracts_used_for_planning:
+          theme_cards:
+            - ""
+          style_cards:
+            - ""
+      candidates:
+        - outline_id: ""
+          title_for_user: ""
+          one_sentence_premise: ""
+          story_shape:
+            opening_situation: ""
+            central_disturbance: ""
+            development: ""
+            turn_or_revelation: ""
+            ending_promise: ""
+          main_character_or_focal_position:
+            description: ""
+            agency_condition: ""
+            knowledge_condition: ""
+          contract_compatibility:
+            theme: {}
+            style: {}
+          source_affordances_created_by_outline:
+            - ""
+          source_non_affordances:
+            - ""
+          symbolic_policy:
+            allowed_operators:
+              - operator_name: ""
+                reason_allowed: ""
+            blocked_operators:
+              - operator_name: ""
+                reason_blocked: ""
+          anti_pastiche_guardrails:
+            - ""
+          what_this_outline_must_not_do:
+            - ""
+          outline_audit:
+            finding: "passed_for_user_selection | blocked"
+            explanation: ""
+            blocking_issues: []
+  must_not:
+    - "Do not copy plots from the corpus."
+    - "Do not make a famous symbol the premise unless it has a new semantic job authorized by the outline."
+

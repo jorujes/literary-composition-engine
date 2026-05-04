@@ -1,0 +1,30 @@
+schema_contract:
+  artifact: "author-models/<author>/phase3-validation/operationality.report.yaml"
+  phase: "phase_3_artifact_validation"
+  purpose: "Check whether cards can be executed by agents without literary intuition."
+  required_top_level:
+    - "operationality_report"
+  schema:
+    operationality_report:
+      author_id: ""
+      card_results:
+        - card: ""
+          executable: "yes | no"
+          explanation: ""
+          missing_elements:
+            - ""
+          orphan_do_moves:
+            - source_path: ""
+              text: ""
+              problem: ""
+          orphan_not_do_moves:
+            - source_path: ""
+              text: ""
+              problem: ""
+          repair_gaps:
+            - ""
+          required_action: "none | auto_patch | return_to_card_agent | human_review"
+  must_not:
+    - "Do not mark a card executable if use_when_source_has or do_not_use_when is missing."
+    - "Do not mark a card executable if failure_signs do not map to repair_moves."
+

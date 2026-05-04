@@ -1,0 +1,63 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/paragraphs/<pid>/paragraph.rewrite.plan.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Select instruction pairs and constraints for one paragraph."
+  required_top_level:
+    - "paragraph_rewrite_plan"
+  schema:
+    paragraph_rewrite_plan:
+      run_id: ""
+      paragraph_id: ""
+      neutral_paragraph_ref: "neutral.paragraph.yaml"
+      sentence_plan_ref: "sentence.plan.yaml"
+      meaning_to_preserve:
+        - ""
+      source_affordances:
+        - ""
+      source_non_affordances:
+        - ""
+      selected_instruction_pairs:
+        - pair_id: ""
+          card: ""
+          do: ""
+          not_do: ""
+          use_when_source_has:
+            - ""
+          do_not_use_when:
+            - ""
+          reason_selected: ""
+      theme_moves_to_apply:
+        - card: ""
+          reason_for_activation: ""
+          instruction_for_paraphraser: ""
+          paired_not_do: ""
+      theme_moves_not_to_apply:
+        - card: ""
+          reason_for_exclusion: ""
+          instruction_for_paraphraser: ""
+      style_moves_to_apply:
+        - card: ""
+          reason_for_activation: ""
+          instruction_for_paraphraser: ""
+          paired_not_do: ""
+      style_moves_not_to_apply:
+        - card: ""
+          reason_for_exclusion: ""
+          instruction_for_paraphraser: ""
+      symbolic_policy:
+        allowed_operators:
+          - operator_name: ""
+            semantic_job: ""
+            source_affordance: ""
+        blocked_operators:
+          - operator_name: ""
+            reason_blocked: ""
+      banned_outputs:
+        - ""
+      paraphraser_self_audit_before_returning:
+        - ""
+  must_not:
+    - "Do not send whole contracts to the paraphraser."
+    - "Do not activate symbols without source affordance."
+    - "Do not select instruction pairs without paired do/not_do."
+

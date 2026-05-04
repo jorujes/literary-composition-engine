@@ -1,0 +1,29 @@
+schema_contract:
+  artifact: "author-models/<author>/phase3-validation/contract.conflicts.yaml"
+  phase: "phase_3_artifact_validation"
+  purpose: "Record contradictions, scope invasions, overlaps, and hidden dependencies."
+  required_top_level:
+    - "contract_conflicts"
+  schema:
+    contract_conflicts:
+      author_id: ""
+      conflicts:
+        - conflict_id: ""
+          conflict_type: "direct_contradiction | unresolved_overlap | scope_invasion | hidden_dependency | example_rule_mismatch | evidence_rule_mismatch"
+          cards_involved:
+            - ""
+          condition_under_which_conflict_appears: ""
+          conflicting_instructions:
+            - card: ""
+              source_path: ""
+              instruction: ""
+          why_it_matters: ""
+          required_resolution: "add_boundary_rule | return_to_card_agent | human_review | remove_rule"
+          proposed_resolution_options:
+            - option: ""
+          gate_role: "blocking | calibration_required | human_review_required | warning"
+          status: "resolved | unresolved"
+  must_not:
+    - "Do not resolve conflicts silently."
+    - "Do not let theme cards control punctuation or style cards introduce new metaphysics."
+

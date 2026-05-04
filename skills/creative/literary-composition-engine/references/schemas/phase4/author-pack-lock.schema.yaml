@@ -1,0 +1,39 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/author.pack.lock.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Freeze validated author pack artifacts for a specific run."
+  required_top_level:
+    - "author_pack_lock"
+  schema:
+    author_pack_lock:
+      author_id: ""
+      loaded_from: "author-models/<author>/validated/"
+      phase3_release:
+        path: "validated/phase3.release.yaml"
+        generation_allowed_for_phase_4: false
+        release_status: "released | not_released"
+      validated_artifacts:
+        theme_contract:
+          path: "validated/theme.contract.yaml"
+          file_hash: ""
+        style_contract:
+          path: "validated/style.contract.yaml"
+          file_hash: ""
+        evidence_notes:
+          path: "validated/evidence.notes.yaml"
+          file_hash: ""
+        instruction_pairs:
+          path: "validated/instruction.pairs.yaml"
+          file_hash: ""
+      phase4_flags:
+        - flag_id: ""
+          instruction: ""
+      forbidden_runtime_behaviors:
+        - "do not use hypothesis_not_for_generation claims"
+        - "do not send whole contracts to the paraphraser"
+        - "do not use author name as a writing shortcut"
+        - "do not activate symbols without source affordance"
+  must_not:
+    - "Do not load unvalidated artifacts."
+    - "Do not repair contracts in Phase 4."
+

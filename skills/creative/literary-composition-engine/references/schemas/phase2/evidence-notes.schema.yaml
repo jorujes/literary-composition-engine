@@ -1,0 +1,32 @@
+schema_contract:
+  artifact: "author-models/<author>/evidence.notes.yaml"
+  phase: "phase_2_author_pack_construction"
+  purpose: >
+    Preserve traceable evidence for authorial claims while limiting what each
+    evidence note authorizes.
+  required_top_level:
+    - "evidence_notes"
+  schema:
+    evidence_notes:
+      author_id: ""
+      evidence:
+        - evidence_id: ""
+          source_work: ""
+          source_location: ""
+          source_text_excerpt: ""
+          observed_behavior: ""
+          relevant_function: ""
+          supports_specific_claim: ""
+          not_a_license_for: ""
+          counterevidence:
+            - evidence_id: ""
+              observed_behavior: ""
+              effect_on_claim: ""
+      evidence_policy:
+        every_note_requires_not_a_license_for: true
+        source_work_must_exist_in_corpus: true
+  must_not:
+    - "Do not use evidence as permission for decorative insertion."
+    - "Do not cite works outside the corpus for generation rules."
+    - "Do not leave not_a_license_for empty."
+

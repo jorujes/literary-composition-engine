@@ -1,0 +1,69 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/writing.request.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Normalize the user's request and define invention boundaries."
+  required_top_level:
+    - "writing_request"
+  schema:
+    writing_request:
+      run_id: ""
+      author_id: ""
+      request_mode: "generate_outline_candidates"
+      output_language: ""
+      user_original_prompt: ""
+      user_goal:
+        description: ""
+        desired_artifact: ""
+        genre_or_form: ""
+        audience: ""
+      outline_policy:
+        user_wants_outline_candidates: false
+        requested_number_of_outlines: null
+        user_provided_outline: ""
+        allow_system_to_invent_outlines: false
+        outline_selection_required: false
+      length_policy:
+        user_already_chose_length: false
+        requested_paragraph_count: null
+        system_should_suggest_paragraph_count: true
+        use_corpus_form_reference: true
+      invention_policy:
+        mode: "invent_outline_candidates"
+        allowed_invention:
+          - ""
+        forbidden_invention:
+          - ""
+      source_material:
+        user_premise: ""
+        user_outline: ""
+        user_draft: ""
+        previous_text_to_continue: ""
+      facts_to_preserve:
+        - ""
+      facts_to_avoid_or_forbid:
+        - ""
+      canon_and_originality_policy:
+        relation_to_author_corpus: "original_work_using_validated_author_contract"
+        may_use_corpus_characters: false
+        may_use_corpus_settings: false
+        may_echo_specific_scenes: false
+      user_checkpoints:
+        - ""
+  allowed_values:
+    writing_request.request_mode:
+      - "generate_outline_candidates"
+      - "user_premise_to_outlines"
+      - "user_outline_to_story"
+      - "user_draft_to_authorial_rewrite"
+      - "continuation"
+      - "isolated_paragraph_or_scene"
+    writing_request.invention_policy.mode:
+      - "no_invention_beyond_user_text"
+      - "fill_local_details_only"
+      - "invent_outline_candidates"
+      - "invent_full_story_with_user_constraints"
+      - "continuation_with_continuity"
+  must_not:
+    - "Do not invent user constraints."
+    - "Do not reuse corpus characters, settings, or scenes unless explicitly allowed."
+

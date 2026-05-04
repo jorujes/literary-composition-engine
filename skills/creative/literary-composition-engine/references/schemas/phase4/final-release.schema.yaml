@@ -1,0 +1,34 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/final.release.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Release or block the final story."
+  required_top_level:
+    - "final_release"
+  schema:
+    final_release:
+      run_id: ""
+      release_status: "released | blocked"
+      generation_allowed_to_show_user: false
+      approved_output_ref: "final.output.yaml | final.repaired.output.yaml"
+      final_text_repair_status: "clean | repaired | blocked"
+      final_repair_audit_ref: "final.repair.audit.yaml"
+      blockers:
+        - ""
+      warnings:
+        - warning_id: ""
+          explanation: ""
+      audit_refs:
+        - "story.audit.report.yaml"
+        - "final.repair.audit.yaml"
+  allowed_values:
+    final_release.release_status:
+      - "released"
+      - "blocked"
+    final_release.final_text_repair_status:
+      - "clean"
+      - "repaired"
+      - "blocked"
+  must_not:
+    - "Do not release with blockers."
+    - "Do not point to an output that failed final.repair.audit."
+

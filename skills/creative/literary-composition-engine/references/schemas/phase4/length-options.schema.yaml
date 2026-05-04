@@ -1,0 +1,51 @@
+schema_contract:
+  artifact_group:
+    - "length.options.yaml"
+    - "length.selection.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Use descriptive corpus form statistics to choose story length."
+  length_options_schema:
+    length_options:
+      run_id: ""
+      selected_outline_id: ""
+      corpus_form_reference:
+        available: false
+        basis: ""
+        observed_paragraph_counts:
+          source_scope: ""
+          descriptive_statistics:
+            min: null
+            p25: null
+            median: null
+            p75: null
+            max: null
+            mean: null
+        observed_word_counts:
+          source_scope: ""
+          descriptive_statistics: {}
+        observed_words_per_paragraph:
+          source_scope: ""
+          descriptive_statistics: {}
+        caveat: ""
+      options_for_user:
+        - option_id: "compact | standard | expanded"
+          paragraph_count: null
+          target_total_words_note: ""
+          description: ""
+          likely_tradeoffs:
+            - ""
+      user_prompt_to_choose: ""
+  length_selection_schema:
+    length_selection:
+      run_id: ""
+      selected_by: "user | system_default"
+      paragraph_count: null
+      user_selected_option_id: ""
+      reason_recorded: ""
+      form_constraints:
+        paragraph_count_is_fixed: true
+        sentence_count_per_paragraph_is_planned_but_adjustable_by_audit: true
+  must_not:
+    - "Do not present corpus statistics as authorial scores."
+    - "Do not offer arbitrary short options unrelated to the observed corpus."
+

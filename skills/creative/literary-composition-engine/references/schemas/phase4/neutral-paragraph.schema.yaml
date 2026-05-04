@@ -1,0 +1,34 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/paragraphs/<pid>/neutral.paragraph.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Store clear, unstyled paragraph content before authorial transformation."
+  required_top_level:
+    - "neutral_paragraph"
+  schema:
+    neutral_paragraph:
+      run_id: ""
+      paragraph_id: ""
+      neutral_text: ""
+      semantic_units:
+        - unit_id: ""
+          statement: ""
+          source_authorization:
+            - ""
+      facts_introduced:
+        - ""
+      facts_preserved_from_previous_context:
+        - ""
+      relations_causal_or_temporal:
+        - ""
+      intentionally_unstyled:
+        description: ""
+      prohibited_in_neutral_draft:
+        - "authorial symbols"
+        - "ornamental style"
+        - "signature lexicon"
+        - "causality change"
+  must_not:
+    - "Do not style the neutral draft."
+    - "Do not write metadata labels as prose."
+    - "Do not invent new central events."
+

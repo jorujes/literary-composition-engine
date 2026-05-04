@@ -1,0 +1,70 @@
+schema_contract:
+  artifact: "author-models/<author>/working/cards/<card_id>.card.yaml"
+  phase: "phase_2_author_pack_construction"
+  purpose: >
+    Define one executable theme/style card. This is the atomic authorial rule:
+    source condition -> authorial operation -> limit -> audit -> repair.
+  required_fields:
+    - "card_id"
+    - "title"
+    - "question_this_card_answers"
+    - "author_rule"
+    - "this_card_controls"
+    - "this_card_does_not_control"
+    - "surface_features_explained"
+    - "evidence_to_collect"
+    - "use_when_source_has"
+    - "do_not_use_when"
+    - "rewrite_moves"
+    - "prohibited_moves"
+    - "micro_examples"
+    - "audit_questions"
+    - "failure_signs"
+    - "repair_moves"
+    - "coordination_notes"
+    - "evidence_refs"
+  schema:
+    card_id: ""
+    title: ""
+    question_this_card_answers: ""
+    author_rule: ""
+    this_card_controls:
+      - ""
+    this_card_does_not_control:
+      - ""
+    surface_features_explained:
+      - ""
+    evidence_to_collect:
+      - ""
+    use_when_source_has:
+      - ""
+    do_not_use_when:
+      - ""
+    rewrite_moves:
+      - ""
+    prohibited_moves:
+      - ""
+    micro_examples:
+      neutral: ""
+      compatible_rewrite: ""
+      bad_rewrite: ""
+      why_bad: ""
+    audit_questions:
+      - ""
+    failure_signs:
+      - ""
+    repair_moves:
+      - ""
+    coordination_notes:
+      - ""
+    evidence_refs:
+      - evidence_id: ""
+        source_work: ""
+        source_location: ""
+        supports_claim: ""
+  must_not:
+    - "Do not use arbitrary score fields."
+    - "Do not use labels such as tone: philosophical or rhythm: high as instructions."
+    - "Do not use a wordlist as an author model."
+    - "Do not cite source_work: unknown or source_location: unspecified."
+

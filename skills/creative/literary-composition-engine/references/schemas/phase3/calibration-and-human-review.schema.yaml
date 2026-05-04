@@ -1,0 +1,44 @@
+schema_contract:
+  artifact_group:
+    - "calibration.patch.yaml"
+    - "human.review.queue.yaml"
+  phase: "phase_3_artifact_validation"
+  purpose: "Separate structural patches from interpretive decisions."
+  calibration_patch_schema:
+    calibration_patch:
+      author_id: ""
+      validation_run_id: ""
+      patches:
+        - patch_id: ""
+          target_file: ""
+          target_path: ""
+          problem_found_by:
+            - ""
+          problem_statement: ""
+          patch_destination: "auto_patch | return_to_card_agent | human_review"
+          requested_revision: ""
+          proposed_structural_patch:
+            operation: "append | move | add_cross_reference | normalize_name | remove_duplicate"
+            value: ""
+          auto_apply_allowed: false
+          reason_auto_apply_allowed: ""
+          reason_auto_apply_not_allowed: ""
+          post_patch_validation_required:
+            - ""
+  human_review_schema:
+    human_review_queue:
+      author_id: ""
+      items:
+        - review_id: ""
+          source: ""
+          reason: ""
+          question_for_reviewer: ""
+          options:
+            - option_id: ""
+              description: ""
+          why_agent_should_not_decide: ""
+          blocks_generation: true
+  must_not:
+    - "Do not auto-patch substantive interpretation."
+    - "Do not let human-review blockers pass into Phase 4."
+

@@ -1,0 +1,39 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/paragraphs/<pid>/sentence_anchor.final_audit.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Independently classify each target/source sentence pair by real rhetorical fit."
+  required_top_level:
+    - "sentence_anchor_final_audit"
+  schema:
+    sentence_anchor_final_audit:
+      run_id: ""
+      paragraph_id: ""
+      audited_candidate_ref: "candidate.output.yaml"
+      sentence_results:
+        - sentence_id: ""
+          source_sentence_ref: {}
+          source_sentence_text: ""
+          target_sentence: ""
+          anchor_status: "strong_anchor | acceptable_anchor | weak_anchor | failed_anchor"
+          rhetorical_operation_match: ""
+          semantic_copy_check:
+            finding: "clean | possible_copy | failed"
+            explanation: ""
+          why_status_was_assigned: ""
+          required_action: "lock | repair_with_same_anchor | reanchor_sentence | block"
+      paragraph_anchor_status: "passed | repair_required | blocked"
+  allowed_values:
+    sentence_results.anchor_status:
+      - "strong_anchor"
+      - "acceptable_anchor"
+      - "weak_anchor"
+      - "failed_anchor"
+    sentence_results.required_action:
+      - "lock"
+      - "repair_with_same_anchor"
+      - "reanchor_sentence"
+      - "block"
+  must_not:
+    - "Do not approve based only on punctuation, length, or broad clause count."
+    - "Do not pass weak_anchor or failed_anchor into final.anchor.lock.yaml."
+

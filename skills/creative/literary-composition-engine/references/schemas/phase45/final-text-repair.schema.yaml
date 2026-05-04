@@ -1,0 +1,70 @@
+schema_contract:
+  artifact_group:
+    - "final.text.repair.report.yaml"
+    - "final.text.repair.plan.yaml"
+    - "final.repaired.output.yaml"
+    - "final.repair.audit.yaml"
+  phase: "phase_4_5_final_text_repair"
+  purpose: "Repair concrete local defects after assembly without turning repair into a beauty pass."
+  report_schema:
+    final_text_repair_report:
+      run_id: ""
+      source_output_ref: "final.output.yaml"
+      overall_finding: "clean | repair_required | blocked"
+      findings:
+        - finding_id: ""
+          location:
+            paragraph_id: ""
+            sentence_id: ""
+            text_span: ""
+          finding_type: "grammar_or_duplication | semantic_clarity | false_positive_repair | local_gptism | weak_anchor_fit_after_assembly | continuity"
+          problem: ""
+          why_it_matters: ""
+          required_action: "no_change | repair_preserving_anchor | restore_previous_text | reanchor_sentence | block"
+          anchor_policy:
+            current_anchor_can_be_preserved: true
+            reanchor_required: false
+            reason: ""
+  plan_schema:
+    final_text_repair_plan:
+      run_id: ""
+      repairs:
+        - repair_id: ""
+          finding_ref: ""
+          target:
+            paragraph_id: ""
+            sentence_id: ""
+          repair_action: "repair_preserving_anchor | restore_previous_text | reanchor_sentence | block"
+          original_sentence: ""
+          repaired_sentence: ""
+          semantic_content_to_preserve:
+            - ""
+          forbidden_changes:
+            - "do not alter facts"
+            - "do not insert new content"
+            - "do not alter causal chain"
+          anchor_handling:
+            preserve_existing_source_sentence_ref: true
+            old_source_sentence_ref: {}
+            new_source_sentence_ref: {}
+            new_source_sentence_text: ""
+            source_to_target_alignment_update: ""
+  audit_schema:
+    final_repair_audit:
+      run_id: ""
+      audited_output_ref: "final.output.yaml | final.repaired.output.yaml"
+      overall_status: "passed | blocked"
+      repairs_checked:
+        - repair_id: ""
+          semantic_preservation: "passed | failed"
+          anchor_integrity: "preserved | reanchored | failed"
+          no_new_content: "passed | failed"
+          local_issue_resolved: "yes | no"
+      release_allowed: false
+      blockers: []
+  must_not:
+    - "Do not rewrite the whole story."
+    - "Do not improve beauty without a concrete finding."
+    - "Do not alter blueprint, causal chain, characters, or promised ending."
+    - "Do not repair a sentence without preserving or explicitly replacing its source anchor."
+

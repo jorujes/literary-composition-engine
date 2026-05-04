@@ -1,0 +1,42 @@
+schema_contract:
+  artifact: "author-models/<author>/phase3-validation/evidence.trace.yaml"
+  phase: "phase_3_artifact_validation"
+  purpose: "Validate claim -> evidence -> function -> limit chains."
+  required_top_level:
+    - "evidence_trace"
+  schema:
+    evidence_trace:
+      author_id: ""
+      claim_evidence_links:
+        - claim_id: ""
+          claim_text: ""
+          linked_evidence:
+            - evidence_id: ""
+              source_work: ""
+              source_location: ""
+              observed_behavior: ""
+              relevant_function: ""
+              supports_specific_claim: ""
+              not_a_license_for: ""
+          counterevidence:
+            - evidence_id: ""
+              observed_behavior: ""
+              effect_on_claim: ""
+          validation_state: "supported"
+          explanation: ""
+          required_contract_patch:
+            needed: false
+            patch_reason: ""
+  allowed_values:
+    claim_evidence_links.validation_state:
+      - "supported"
+      - "supported_with_narrow_scope"
+      - "hypothesis_only"
+      - "unsupported"
+      - "contradicted"
+      - "evidence_misused"
+  must_not:
+    - "Do not leave not_a_license_for empty."
+    - "Do not treat a single decorative symbol occurrence as a general license."
+    - "Do not cite evidence outside the Phase 1 corpus."
+
