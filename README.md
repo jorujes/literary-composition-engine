@@ -126,4 +126,6 @@ This workflow uses Hermes-specific strengths:
 - model swapping for analysis, paraphrase, and audit stages
 - long-running creative workflows with visible intermediate artifacts
 
-The result is not a one-shot prompt. It is a controlled writing runtime.
+Excellent one-shot prompts can produce excellent passages. The problem is that
+quality is not reliably guaranteed. This skill turns literary composition into a
+controlled runtime: plan, anchor, audit, repair, and release.
