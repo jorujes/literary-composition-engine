@@ -294,6 +294,13 @@ coordination/subordination, turn logic, category of movement, and punctuation
 function where relevant. A merely broad label such as `causal qualification` or
 `evidentiary inventory` is not enough.
 
+`strong_form_match` is narrow. Do not mark an anchor strong if the source and
+target differ sharply in sentence length, discourse mode, dialect/register,
+question/declaration force, object/action category, or sequence of movement.
+Use `acceptable_form_match` only when the difference is explicit, local, and
+still leaves the source sentence as a necessary machine. If the same target
+could be retrojustified from many unrelated sentences, the source is weak.
+
 Block before writing if the best source candidate is only `weak_form_match` or
 `failed_form_match`. Search more. A selected question cannot anchor a factual
 declaration; a crisis-event sentence cannot anchor an administrative inventory;
@@ -358,7 +365,11 @@ source_to_target_alignment_plan:
 Do not use boilerplate such as "reuses the formal operation of the source
 sentence" as the reason. The selection reason and part map must be so specific
 that the auditor can reject the sentence if a different source sentence would
-serve just as well.
+fit just as well. `why_selected_before_writing` and
+`why_this_exact_sentence_is_necessary` must cite literal words from the selected
+source sentence, and `source_sentence_parts.source_words_or_span` must be an
+actual contiguous span from that source sentence, never a label such as
+"opening", "main clause", "qualification", or "turning phrase".
 
 Do not use generic source spans such as "opening syntax", "clause skeleton",
 "main clause", or "qualification" unless they are accompanied by literal source

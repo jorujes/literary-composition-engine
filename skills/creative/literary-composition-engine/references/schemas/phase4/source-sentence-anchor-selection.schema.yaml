@@ -79,3 +79,10 @@ schema_contract:
     - "Do not copy source content, images, names, conclusions, or memorable phrasing."
     - "Do not select a source sentence without a prior strong_form_match or acceptable_form_match in sentence_anchor.matching.yaml."
     - "Do not use generic source spans such as opening syntax, main clause, qualification, or development without literal source words."
+    - "Do not use boilerplate reasons such as same local machine, controlled expansion, literal pressure, or narrowed implication without exact source words."
+    - "Do not mark a source strong when dialect/register, question/declaration force, object/action category, or sentence length is plainly mismatched."
+  must:
+    - "why_this_exact_sentence_is_necessary cites a literal span from selected_source_sentence_text."
+    - "Every source_sentence_parts.source_words_or_span is a contiguous literal span from selected_source_sentence_text."
+    - "source_to_target_part_map.source_words_or_span is a contiguous literal span from source_sentence_text."
+    - "If the same target could be justified by many unrelated source sentences, selected_form_match_status must be weak_form_match or failed_form_match and the sentence must be replanned."

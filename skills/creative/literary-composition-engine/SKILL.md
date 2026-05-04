@@ -95,6 +95,9 @@ audit, and repair one paragraph at a time until `blind_anchor_adversarial_audit.
 passes. A failed sentence must be repaired by rewriting the target sentence or
 replacing its source sentence, never by improving the explanation. Only a passed
 cycle may be copied to the paragraph root and released.
+Anchor approval must be literal and adversarial: source-selection reasons and
+blind audit reasons cite exact source/target spans, and repeated boilerplate
+such as "same local machine" or "controlled expansion" is a release blocker.
 
 ## Phase 1 Workflow
 

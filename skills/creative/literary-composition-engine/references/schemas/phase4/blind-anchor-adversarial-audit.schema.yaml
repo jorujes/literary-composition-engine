@@ -53,7 +53,11 @@ schema_contract:
     - "Every sentence starts as failed_until_demonstrated."
     - "Approval requires concrete comparison of source and target form, not yes/no fields."
     - "A sentence with incoherent target Portuguese fails even if the source form is close."
+    - "concrete_reason cites literal spans from both source_literal and target_literal."
+    - "formal_differences are sentence-local and cannot be reused as a template across sentences."
   must_not:
     - "Do not reuse generator status, matching status, or prior justification as evidence."
     - "Do not approve by punctuation, length, clause count, or mood alone."
     - "Do not repair by improving justification; rewrite the target or replace the source."
+    - "Do not approve dialect-to-standard, question-to-declaration, fragment-to-analytic-sentence, object-list-to-event-sequence, or bodily-crisis-to-administrative-action matches without a concrete payload-level reason."
+    - "Do not use boilerplate such as same local machine, controlled expansion, literal pressure, or narrowed implication."

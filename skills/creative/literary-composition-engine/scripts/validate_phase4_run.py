@@ -71,6 +71,17 @@ GENERIC_ALIGNMENT_MARKERS = [
     "avaliada literalmente no motivo",
     "preserves source order of opening pressure",
     "delayed assertion and qualified closure",
+    "chosen source provides a particular progression",
+    "literal pressure to narrowed consequence",
+    "other candidates either disperse the turn or close too abruptly",
+    "starting from failed status, this passes because the target sentence performs the same local machine",
+    "concrete pressure, controlled expansion, and narrowed implication",
+    "initial pressure that delays full assertion",
+    "turning phrase that redirects the sentence motion",
+    "terminal cadence that narrows the implication",
+    "same local machine",
+    "source circumstance",
+    "target substitutes survey circumstance",
 ]
 
 LEGACY_PATTERN_KEYS = {
@@ -137,6 +148,66 @@ GENERIC_SOURCE_SPAN_MARKERS = {
     "source words or span",
 }
 
+DIALECT_MARKERS = [
+    r"\ban'\b",
+    r"\bain't\b",
+    r"\bnaow\b",
+    r"\bfust\b",
+    r"\brud\b",
+    r"\bdaown\b",
+    r"\bthey's\b",
+    r"\bmis'\b",
+    r"\bgen'ration\b",
+    r"\bhaow\b",
+    r"\bye\b",
+]
+
+STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "as",
+    "at",
+    "but",
+    "by",
+    "for",
+    "from",
+    "i",
+    "in",
+    "it",
+    "its",
+    "of",
+    "on",
+    "or",
+    "that",
+    "the",
+    "this",
+    "to",
+    "was",
+    "were",
+    "with",
+    "o",
+    "a",
+    "os",
+    "as",
+    "de",
+    "do",
+    "da",
+    "dos",
+    "das",
+    "e",
+    "em",
+    "que",
+    "um",
+    "uma",
+    "para",
+    "por",
+    "com",
+    "não",
+}
+
+WORD_RE = re.compile(r"[\wÀ-ÖØ-öø-ÿ']+")
+
 
 def load_yaml(path: Path) -> Any:
     if yaml is None:
@@ -196,6 +267,59 @@ def word_count(text: str) -> int:
     return len(re.findall(r"\b[\wÀ-ÖØ-öø-ÿ]+\b", text or ""))
 
 
+def normalized_words(text: str) -> list[str]:
+    return [word.casefold() for word in WORD_RE.findall(text or "")]
+
+
+def normalized_word_text(text: str) -> str:
+    return " ".join(normalized_words(text))
+
+
+def literal_spans(text: str, min_words: int, max_words: int = 9) -> set[str]:
+    words = normalized_words(text)
+    spans: set[str] = set()
+    if len(words) < min_words:
+        return spans
+    max_n = min(max_words, len(words))
+    for n in range(max_n, min_words - 1, -1):
+        for start in range(0, len(words) - n + 1):
+            span_words = words[start : start + n]
+            content_words = [word for word in span_words if word not in STOPWORDS and len(word) > 2]
+            if len(content_words) >= 2:
+                spans.add(" ".join(span_words))
+    return spans
+
+
+def contains_literal_span(haystack: str, source_text: str, min_words: int) -> bool:
+    haystack_words = normalized_word_text(haystack)
+    if not haystack_words:
+        return False
+    return any(span in haystack_words for span in literal_spans(source_text, min_words=min_words))
+
+
+def is_literal_source_span(span: Any, source_text: str, min_words: int) -> bool:
+    span_text = normalized_word_text(flatten_text(span))
+    source_words = normalized_word_text(source_text)
+    if not span_text or not source_words or span_text not in source_words:
+        return False
+    if len(span_text.split()) < min_words:
+        return False
+    content_words = [word for word in span_text.split() if word not in STOPWORDS and len(word) > 2]
+    return len(content_words) >= 1
+
+
+def has_generic_marker(value: Any) -> bool:
+    haystack = flatten_text(value).casefold()
+    return any(marker.casefold() in haystack for marker in GENERIC_ALIGNMENT_MARKERS)
+
+
+def has_dialect_marker(text: str) -> bool:
+    lowered = text or ""
+    if "..." in lowered or ". . ." in lowered:
+        return True
+    return any(re.search(marker, lowered, re.IGNORECASE) for marker in DIALECT_MARKERS)
+
+
 def flatten_text(value: Any) -> str:
     if isinstance(value, str):
         return value
@@ -212,7 +336,8 @@ def duplicate_ratio(values: list[str]) -> float:
         return 0.0
     counts: dict[str, int] = {}
     for value in cleaned:
-        counts[value] = counts.get(value, 0) + 1
+        normalized = normalize_prose(value)
+        counts[normalized] = counts.get(normalized, 0) + 1
     return max(counts.values()) / len(cleaned)
 
 
@@ -359,6 +484,9 @@ def validate(args: argparse.Namespace) -> int:
     all_source_fidelity: list[str] = []
     all_semantic_independence: list[str] = []
     all_selection_reasons: list[str] = []
+    all_blind_audit_reasons: list[str] = []
+    all_blind_formal_differences: list[str] = []
+    all_source_form_jobs: list[str] = []
     all_final_sentences: list[str] = []
     final_anchor_locks = 0
     final_anchor_repairs_required = 0
@@ -580,6 +708,26 @@ def validate(args: argparse.Namespace) -> int:
                             pdir / "blind_anchor_adversarial_audit.yaml",
                             f"{pid}/{sentence_id} concrete_reason is missing or too thin",
                         )
+                    elif has_generic_marker(reason):
+                        finding(
+                            "blind_anchor_audit_generic_reason",
+                            pdir / "blind_anchor_adversarial_audit.yaml",
+                            f"{pid}/{sentence_id} concrete_reason uses generic anchor boilerplate",
+                        )
+                    else:
+                        all_blind_audit_reasons.append(reason)
+                        if isinstance(source_literal, str) and not contains_literal_span(reason, source_literal, args.min_literal_span_words):
+                            finding(
+                                "blind_anchor_audit_reason_missing_source_span",
+                                pdir / "blind_anchor_adversarial_audit.yaml",
+                                f"{pid}/{sentence_id} concrete_reason must quote or cite a literal source span",
+                            )
+                        if isinstance(target_literal, str) and not contains_literal_span(reason, target_literal, args.min_literal_span_words):
+                            finding(
+                                "blind_anchor_audit_reason_missing_target_span",
+                                pdir / "blind_anchor_adversarial_audit.yaml",
+                                f"{pid}/{sentence_id} concrete_reason must quote or cite a literal target span",
+                            )
                     formal = result.get("formal_differences") or result.get("concrete_form_differences_examined")
                     if not isinstance(formal, dict):
                         finding(
@@ -603,12 +751,13 @@ def validate(args: argparse.Namespace) -> int:
                                 "comparada literalmente no motivo",
                                 "avaliada literalmente no motivo",
                                 "categoria preservada conforme motivo",
-                            }:
+                            } or has_generic_marker(value):
                                 finding(
                                     "blind_anchor_audit_generic_formal_difference",
                                     pdir / "blind_anchor_adversarial_audit.yaml",
                                     f"{pid}/{sentence_id} formal_differences.{key} is missing or generic",
                                 )
+                        all_blind_formal_differences.append(flatten_text(formal))
         matching_artifact = loaded.get("sentence_anchor.matching.yaml") or {}
         matching_root = artifact_root(matching_artifact, "sentence_anchor_matching")
         matching_entries: dict[str, dict[str, Any]] = {}
@@ -720,6 +869,21 @@ def validate(args: argparse.Namespace) -> int:
                         pdir / "sentence_anchor.matching.yaml",
                         f"{pid}/{sentence_id or '?'} lacks why_selected_before_writing",
                     )
+                else:
+                    prewrite_reason = flatten_text(item.get("why_selected_before_writing"))
+                    selected_source_text = text_field(item, "selected_source_sentence_text")
+                    if has_generic_marker(prewrite_reason):
+                        finding(
+                            "sentence_anchor_matching_generic_prewrite_reason",
+                            pdir / "sentence_anchor.matching.yaml",
+                            f"{pid}/{sentence_id or '?'} why_selected_before_writing uses generic anchor boilerplate",
+                        )
+                    if selected_source_text and not contains_literal_span(prewrite_reason, selected_source_text, args.min_literal_span_words):
+                        finding(
+                            "sentence_anchor_matching_prewrite_reason_missing_source_span",
+                            pdir / "sentence_anchor.matching.yaml",
+                            f"{pid}/{sentence_id or '?'} why_selected_before_writing must cite a literal span from the selected source sentence",
+                        )
         final_audit = loaded.get("sentence_anchor.final_audit.yaml") or {}
         final_audit_root = final_audit.get("sentence_anchor_final_audit") if isinstance(final_audit, dict) else {}
         if not isinstance(final_audit_root, dict):
@@ -980,6 +1144,25 @@ def validate(args: argparse.Namespace) -> int:
                 reason = item.get("why_this_exact_sentence_is_necessary") or item.get("selected_because")
                 if isinstance(reason, str) and reason.strip():
                     all_selection_reasons.append(reason)
+                    selected_source_text = text_field(item, "selected_source_sentence_text")
+                    if has_generic_marker(reason):
+                        finding(
+                            "source_anchor_selection_generic_reason",
+                            pdir / "source_sentence_anchor.selection.yaml",
+                            f"{pid}/{sentence_id or '?'} why_this_exact_sentence_is_necessary uses generic anchor boilerplate",
+                        )
+                    if selected_source_text and not contains_literal_span(reason, selected_source_text, args.min_literal_span_words):
+                        finding(
+                            "source_anchor_selection_reason_missing_source_span",
+                            pdir / "source_sentence_anchor.selection.yaml",
+                            f"{pid}/{sentence_id or '?'} why_this_exact_sentence_is_necessary must cite a literal span from the selected source sentence",
+                        )
+                else:
+                    finding(
+                        "source_anchor_selection_missing_reason",
+                        pdir / "source_sentence_anchor.selection.yaml",
+                        f"{pid}/{sentence_id or '?'} lacks why_this_exact_sentence_is_necessary",
+                    )
                 matching_entry = matching_entries.get(sentence_id) if isinstance(sentence_id, str) else None
                 if not matching_entry:
                     finding(
@@ -1044,6 +1227,7 @@ def validate(args: argparse.Namespace) -> int:
                         f"{pid}/{sentence_id or '?'} lacks source_sentence_parts",
                     )
                 else:
+                    selected_source_text = text_field(item, "selected_source_sentence_text")
                     for part in source_parts:
                         if not isinstance(part, dict):
                             continue
@@ -1054,12 +1238,20 @@ def validate(args: argparse.Namespace) -> int:
                                 pdir / "source_sentence_anchor.selection.yaml",
                                 f"{pid}/{sentence_id or '?'} has generic source_words_or_span: {span!r}",
                             )
-                        if missing_or_empty(part.get("formal_job")) or is_generic_source_span(part.get("formal_job")):
+                        elif selected_source_text and not is_literal_source_span(span, selected_source_text, args.min_source_part_span_words):
+                            finding(
+                                "source_anchor_selection_nonliteral_source_span",
+                                pdir / "source_sentence_anchor.selection.yaml",
+                                f"{pid}/{sentence_id or '?'} source_words_or_span is not literal in selected source sentence: {span!r}",
+                            )
+                        if missing_or_empty(part.get("formal_job")) or is_generic_source_span(part.get("formal_job")) or has_generic_marker(part.get("formal_job")):
                             finding(
                                 "source_anchor_selection_generic_formal_job",
                                 pdir / "source_sentence_anchor.selection.yaml",
                                 f"{pid}/{sentence_id or '?'} has generic formal_job: {part.get('formal_job')!r}",
                             )
+                        else:
+                            all_source_form_jobs.append(flatten_text(part.get("formal_job")))
 
         alignments = selection.get("source_to_target_alignment_plan") or selection_root.get("source_to_target_alignment_plan") or []
         if isinstance(alignments, list):
@@ -1081,12 +1273,20 @@ def validate(args: argparse.Namespace) -> int:
                                 pdir / "source_sentence_anchor.selection.yaml",
                                 f"{pid}/{item.get('sentence_id', '?')} alignment has generic source_words_or_span: {span!r}",
                             )
-                        if missing_or_empty(part_map.get("source_formal_job")) or is_generic_source_span(part_map.get("source_formal_job")):
+                        elif text_field(item, "source_sentence_text") and not is_literal_source_span(span, text_field(item, "source_sentence_text"), args.min_source_part_span_words):
+                            finding(
+                                "source_alignment_nonliteral_source_span",
+                                pdir / "source_sentence_anchor.selection.yaml",
+                                f"{pid}/{item.get('sentence_id', '?')} alignment source_words_or_span is not literal in source_sentence_text: {span!r}",
+                            )
+                        if missing_or_empty(part_map.get("source_formal_job")) or is_generic_source_span(part_map.get("source_formal_job")) or has_generic_marker(part_map.get("source_formal_job")):
                             finding(
                                 "source_alignment_generic_formal_job",
                                 pdir / "source_sentence_anchor.selection.yaml",
                                 f"{pid}/{item.get('sentence_id', '?')} alignment has generic source_formal_job: {part_map.get('source_formal_job')!r}",
                             )
+                        else:
+                            all_source_form_jobs.append(flatten_text(part_map.get("source_formal_job")))
                 independence = item.get("target_semantic_independence")
                 if isinstance(independence, str) and independence.strip():
                     all_semantic_independence.append(independence)
@@ -1112,9 +1312,40 @@ def validate(args: argparse.Namespace) -> int:
                 if isinstance(independence, str) and independence.strip():
                     all_semantic_independence.append(independence)
                 output_sentence = text_field(mapping, "output_sentence", "target_sentence", "text")
+                selection_entry = selection_entries.get(str(mapping.get("sentence_id")))
+                if output_sentence and isinstance(selection_entry, dict):
+                    source_text = text_field(selection_entry, "selected_source_sentence_text")
+                    selected_status = selection_entry.get("selected_form_match_status")
+                    if source_text:
+                        source_words = max(1, word_count(source_text))
+                        target_words = max(1, word_count(output_sentence))
+                        length_ratio = max(source_words / target_words, target_words / source_words)
+                        if selected_status == "strong_form_match" and length_ratio > args.max_strong_anchor_length_ratio:
+                            finding(
+                                "strong_source_anchor_length_mismatch",
+                                pdir / "candidate.output.yaml",
+                                f"{pid}/{mapping.get('sentence_id', '?')} strong_form_match has source/target length ratio {length_ratio:.2f}, above {args.max_strong_anchor_length_ratio:.2f}",
+                            )
+                        if selected_status == "acceptable_form_match" and length_ratio > args.max_acceptable_anchor_length_ratio:
+                            finding(
+                                "acceptable_source_anchor_length_mismatch",
+                                pdir / "candidate.output.yaml",
+                                f"{pid}/{mapping.get('sentence_id', '?')} acceptable_form_match has source/target length ratio {length_ratio:.2f}, above {args.max_acceptable_anchor_length_ratio:.2f}",
+                            )
+                        if has_dialect_marker(source_text) and not has_dialect_marker(output_sentence):
+                            finding(
+                                "source_anchor_dialect_mismatch",
+                                pdir / "candidate.output.yaml",
+                                f"{pid}/{mapping.get('sentence_id', '?')} selected dialect/fragmentary source sentence for non-dialect target",
+                            )
+                        if "?" in source_text and "?" not in output_sentence and selected_status == "strong_form_match":
+                            finding(
+                                "strong_source_anchor_question_to_declaration",
+                                pdir / "candidate.output.yaml",
+                                f"{pid}/{mapping.get('sentence_id', '?')} strong_form_match uses a question source for a non-question target",
+                            )
                 for regex, label in SURFACE_GPTISM_PATTERNS:
                     if output_sentence and regex.search(output_sentence):
-                        selection_entry = selection_entries.get(str(mapping.get("sentence_id")))
                         if not has_source_license_for_surface_pattern(mapping, selection_entry):
                             finding(
                                 "unlicensed_generic_rhetorical_template",
@@ -1363,10 +1594,31 @@ def validate(args: argparse.Namespace) -> int:
                 run,
                 f"most repeated anchor-selection reason covers {reason_ratio:.2%} of planned sentences; max allowed is {args.max_duplicate_selection_reason_ratio:.0%}",
             )
+        blind_reason_ratio = duplicate_ratio(all_blind_audit_reasons)
+        if len(all_blind_audit_reasons) >= args.min_items_for_duplicate_boilerplate_check and args.max_duplicate_blind_reason_ratio and blind_reason_ratio > args.max_duplicate_blind_reason_ratio:
+            finding(
+                "boilerplate_blind_anchor_audit_reason",
+                run,
+                f"most repeated blind concrete_reason covers {blind_reason_ratio:.2%} of audited sentences; max allowed is {args.max_duplicate_blind_reason_ratio:.0%}",
+            )
+        blind_formal_ratio = duplicate_ratio(all_blind_formal_differences)
+        if len(all_blind_formal_differences) >= args.min_items_for_duplicate_boilerplate_check and args.max_duplicate_blind_formal_ratio and blind_formal_ratio > args.max_duplicate_blind_formal_ratio:
+            finding(
+                "boilerplate_blind_anchor_formal_differences",
+                run,
+                f"most repeated blind formal_differences block covers {blind_formal_ratio:.2%} of audited sentences; max allowed is {args.max_duplicate_blind_formal_ratio:.0%}",
+            )
+        source_form_job_ratio = duplicate_ratio(all_source_form_jobs)
+        if len(all_source_form_jobs) >= args.min_items_for_duplicate_boilerplate_check and args.max_duplicate_source_form_job_ratio and source_form_job_ratio > args.max_duplicate_source_form_job_ratio:
+            finding(
+                "boilerplate_source_form_jobs",
+                run,
+                f"most repeated source formal job covers {source_form_job_ratio:.2%} of mapped source parts; max allowed is {args.max_duplicate_source_form_job_ratio:.0%}",
+            )
         generic_hits = [
             marker
             for marker in GENERIC_ALIGNMENT_MARKERS
-            if marker.lower() in " ".join(all_source_fidelity + all_semantic_independence + all_selection_reasons).lower()
+            if marker.lower() in " ".join(all_source_fidelity + all_semantic_independence + all_selection_reasons + all_blind_audit_reasons + all_blind_formal_differences + all_source_form_jobs).lower()
         ]
         if generic_hits:
             finding(
@@ -1388,6 +1640,9 @@ def validate(args: argparse.Namespace) -> int:
             "source_fidelity_duplicate_ratio": duplicate_ratio(all_source_fidelity),
             "semantic_independence_duplicate_ratio": duplicate_ratio(all_semantic_independence),
             "selection_reason_duplicate_ratio": duplicate_ratio(all_selection_reasons),
+            "blind_reason_duplicate_ratio": duplicate_ratio(all_blind_audit_reasons),
+            "blind_formal_differences_duplicate_ratio": duplicate_ratio(all_blind_formal_differences),
+            "source_form_job_duplicate_ratio": duplicate_ratio(all_source_form_jobs),
             "final_anchor_locks": final_anchor_locks,
             "paragraphs_requiring_final_anchor_repair": final_anchor_repairs_required,
         },
@@ -1425,7 +1680,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-repeated-final-sentence-count", type=int, default=1, help="Block exact repeated final sentences above this count; use 0 to disable.")
     parser.add_argument("--min-repeated-final-sentence-words", type=int, default=8, help="Minimum sentence length for repeated-final-sentence blocking.")
     parser.add_argument("--min-blind-audit-reason-words", type=int, default=18, help="Minimum length for concrete blind audit reasons.")
+    parser.add_argument("--min-literal-span-words", type=int, default=4, help="Minimum contiguous source/target words that must be cited in strict anchor reasons.")
+    parser.add_argument("--min-source-part-span-words", type=int, default=2, help="Minimum words for source_words_or_span to count as a literal source part.")
     parser.add_argument("--min-source-candidates", type=int, default=5, help="Minimum source candidates considered per planned sentence.")
+    parser.add_argument("--max-strong-anchor-length-ratio", type=float, default=2.15, help="Maximum source/target word-count ratio for strong_form_match anchors.")
+    parser.add_argument("--max-acceptable-anchor-length-ratio", type=float, default=3.0, help="Maximum source/target word-count ratio for acceptable_form_match anchors.")
+    parser.add_argument("--max-duplicate-blind-reason-ratio", type=float, default=0.35, help="Maximum duplicate blind concrete_reason ratio; 0 disables.")
+    parser.add_argument("--max-duplicate-blind-formal-ratio", type=float, default=0.35, help="Maximum duplicate blind formal_differences ratio; 0 disables.")
+    parser.add_argument("--max-duplicate-source-form-job-ratio", type=float, default=0.35, help="Maximum duplicate source formal job ratio; 0 disables.")
+    parser.add_argument("--min-items-for-duplicate-boilerplate-check", type=int, default=6, help="Minimum item count before duplicate boilerplate ratios are enforced.")
     parser.add_argument(
         "--forbidden-token",
         action="append",

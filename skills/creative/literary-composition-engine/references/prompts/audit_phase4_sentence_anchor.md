@@ -57,6 +57,20 @@ questioning force in the target. A bodily event sentence cannot anchor an
 administrative inventory. A sentence listing objects cannot anchor an event
 sequence. These are `blocked_for_replan`, not taste issues.
 
+Do not accept generic praise of alignment. The concrete reason must quote or
+cite exact spans from both the source and the target. Repeated templates such as
+"the same local machine", "controlled expansion", "narrowed implication", or
+"literal pressure" do not demonstrate anything unless they are attached to the
+specific words being compared. If several sentences reuse the same
+`formal_differences` language, treat the audit as failed and ask for a real
+sentence-by-sentence comparison.
+
+Block clear false matches even if punctuation looks similar: dialect source to
+non-dialect target, question source to factual declaration, fragment source to
+full analytic sentence, object list to event sequence, bodily crisis to
+administrative action, or a source whose length and movement are plainly too
+small for the target's semantic burden.
+
 Semantic sanity is a release gate. Reject targets that are formally clever but
 wrong in prose, for example:
 
@@ -100,7 +114,8 @@ blind_anchor_adversarial_audit:
         movement_category: ""
       concrete_reason: >
         Compare source and target concretely. Mention exact source words and
-        exact target words. Do not write yes/no boilerplate.
+        exact target words. Do not write yes/no boilerplate or a reusable
+        alignment template.
       required_repair:
         needed: false
         repair_type: "rewrite_target | replace_source | none"
@@ -112,7 +127,9 @@ Block if:
 - the audit is not blind;
 - source/target/payload literals are missing;
 - the explanation is generic or does not cite exact source and target movement;
+- the explanation does not include literal spans from both source and target;
 - source and target differ in mood, clause order, turn logic, or category without a pre-declared acceptable difference;
+- source and target differ in dialect/register or length beyond what the local form can carry;
 - the sentence is only superficially authorial by punctuation;
 - the sentence loses planned meaning;
 - the sentence has category error, unclear agent, broken predicate fit, unresolved pronoun, or copied discourse marker without narrative need.

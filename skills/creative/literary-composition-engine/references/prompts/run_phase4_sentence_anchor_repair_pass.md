@@ -97,6 +97,13 @@ Block shallow approvals. Do not approve because:
 - a boilerplate explanation says "opening, qualification, implication";
 - the source could be replaced by many unrelated corpus sentences.
 
+Do not approve with reusable explanation templates. `why_status`,
+`source_rhetorical_operation`, and `target_rhetorical_operation` must be tied to
+literal words from the current source/target pair. A phrase like "same local
+machine", "controlled expansion", "literal pressure", or "narrowed implication"
+is a blocker unless the audit cites the exact source span and target span that
+perform that operation.
+
 Also block concrete mismatches:
 
 - source is a question and target is a factual declaration;
@@ -104,6 +111,9 @@ Also block concrete mismatches:
   administrative statement;
 - source is an inventory and target is a temporal event sequence;
 - source has temporal subordination but target has only an appositive list;
+- source is dialect-heavy, quoted speech, or fragmentary while the target is
+  standard analytic narration;
+- source and target are grossly disproportionate in length or semantic burden;
 - source and target share only a broad operation label.
 
 These may pass only if `sentence_anchor.matching.yaml` already named the

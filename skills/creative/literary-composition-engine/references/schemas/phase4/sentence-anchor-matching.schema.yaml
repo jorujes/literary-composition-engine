@@ -69,3 +69,10 @@ schema_contract:
     - "Do not use broad labels such as style, vibe, literary, or atmospheric as form matching."
     - "Do not pass weak_form_match or failed_form_match into source_sentence_anchor.selection.yaml."
     - "Do not treat question-to-declaration, event-to-inventory, or list-to-event mismatches as acceptable without explicit narrow justification."
+    - "Do not mark dialect-heavy, fragmentary, or quoted speech as strong_form_match for standard analytic narration unless the target has the same discourse mode."
+    - "Do not mark strong_form_match when source and target length or semantic burden are plainly out of proportion."
+    - "Do not use boilerplate reasons such as same local machine, controlled expansion, literal pressure, or narrowed implication."
+  must:
+    - "why_selected_before_writing cites a literal span from selected_source_sentence_text."
+    - "strong_form_match is reserved for close mood, clause order, turn logic, movement category, register, and proportional sentence length."
+    - "acceptable_form_match names the exact local difference and why the source remains necessary despite it."
