@@ -56,9 +56,9 @@ Do not create generic bans from surface tokens.
 The blocked pattern is a generic corrective contrast like:
 
 ```text
-não com X, mas com Y
-não era X, mas Y
-não por X, mas por Y
+not with X, but with Y
+not X, but Y
+not because of X, but because of Y
 ```
 
 A simple negative imperative is not that pattern.
@@ -66,11 +66,11 @@ A simple negative imperative is not that pattern.
 Example:
 
 ```text
-Não investigue o fundo quando a água parecer imóvel contra o vento.
+Do not investigate the bottom when the water seems motionless against the wind.
 ```
 
 This is a legitimate warning/prohibition and must not be changed merely because
-it starts with `Não`.
+it starts with `Do not`.
 
 If a previous repair changed a legitimate construction because of a false
 positive, restore it and record `finding_type: false_positive_repair`.
@@ -207,4 +207,3 @@ approved_output_ref: "final.output.yaml | final.repaired.output.yaml"
 final_text_repair_status: "clean | repaired"
 final_repair_audit_ref: "final.repair.audit.yaml"
 ```
-

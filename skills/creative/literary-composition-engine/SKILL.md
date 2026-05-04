@@ -430,7 +430,7 @@ paragraph.release.yaml
 ```
 
 `neutral.paragraph.yaml` must be genuine neutral prose. It is invalid to wrap
-the final prose in labels such as `Neutro p003 frase 2:` or other metadata just
+the final prose in labels such as `Neutral p003 sentence 2:` or other metadata just
 to make `candidate.output.yaml` differ mechanically from the neutral draft. If
 stripping those labels makes the neutral text equal to the candidate/final
 paragraph, regenerate the neutral draft.
@@ -472,7 +472,7 @@ over-concentration or long sequential run is a release blocker unless the user
 explicitly requested imitation of one specific source work.
 
 Do not let generic GPT rhetoric pass as source fidelity. A surface formula such
-as `não com X, mas com Y` is blocked unless the chosen source sentence has an
+as `not with X, but with Y` is blocked unless the chosen source sentence has an
 equivalent contrastive/corrective operation and the alignment cites that
 operation explicitly.
 

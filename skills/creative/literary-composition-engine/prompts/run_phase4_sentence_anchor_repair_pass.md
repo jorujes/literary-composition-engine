@@ -64,18 +64,18 @@ Useful rhetorical operations include, but are not limited to:
 
 ```yaml
 rhetorical_operations:
-  - "justificativa testemunhal"
-  - "contraste entre explicação pública e versão privada"
-  - "pedido negativo seguido de correção"
-  - "autodefesa de credibilidade do narrador"
-  - "inventário probatório"
-  - "ressalva epistemológica"
-  - "consequência ominosa"
-  - "enumeração documental"
-  - "observação sensorial qualificada"
-  - "cadeia de evidência"
-  - "dedução a partir de detalhe material"
-  - "fechamento de advertência"
+  - "testimonial justification"
+  - "contrast between public explanation and private account"
+  - "negative request followed by correction"
+  - "narrator credibility self-defense"
+  - "evidentiary inventory"
+  - "epistemological qualification"
+  - "ominous consequence"
+  - "documentary enumeration"
+  - "qualified sensory observation"
+  - "chain of evidence"
+  - "deduction from material detail"
+  - "closing warning"
 ```
 
 Block shallow approvals. Do not approve because:
@@ -150,9 +150,9 @@ sentence_anchor_repair_plan:
       selected_new_source_sentence_text: ""
       rewrite_instruction: ""
       forbidden_changes:
-        - "não alterar conteúdo narrativo"
-        - "não inserir novo fato"
-        - "não copiar conteúdo semântico da fonte"
+        - "do not alter narrative content"
+        - "do not insert a new fact"
+        - "do not copy semantic content from the source"
 ```
 
 Then write `repaired.candidate.output.yaml`. It must have the same structure as

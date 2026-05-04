@@ -36,7 +36,7 @@ For each sentence, verify:
 9. Every agent/pronoun/deictic marker is grounded in the paragraph, blueprint, or continuity.
 10. The target sentence still says the planned meaning clearly.
 11. No new content was introduced to complete an inherited structure.
-12. Any generic rhetorical template in the target, such as `não com X, mas com Y`, is licensed by an equivalent contrastive/corrective machine in the selected source sentence and cited in the alignment.
+12. Any generic rhetorical template in the target, such as `not with X, but with Y`, is licensed by an equivalent contrastive/corrective machine in the selected source sentence and cited in the alignment.
 13. The selected anchors are not assigned sequentially from one source work as a convenience. If several consecutive anchors come from the same story, each one must have a local necessity rationale and rejected alternatives.
 14. No legacy `sentence_pattern` fields appear anywhere in the paragraph artifacts.
 

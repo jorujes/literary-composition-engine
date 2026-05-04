@@ -67,7 +67,7 @@ python3 ~/.hermes/skills/creative/literary-composition-engine/scripts/validate_p
 Neutral draft rule:
 
 `neutral.paragraph.yaml` must contain a real neutral paragraph in plain prose.
-It must not be final prose with labels such as `Neutro p003 frase 2: ...`, a
+It must not be final prose with labels such as `Neutral p003 sentence 2: ...`, a
 metadata wrapper, or the final candidate with cosmetic substitutions. If
 removing labels from the neutral draft yields the candidate or final paragraph,
 the run is invalid and must regenerate the neutral draft.
@@ -93,8 +93,8 @@ final.repair.audit.yaml
 
 Every final repair must declare whether it preserves the existing source
 sentence anchor or explicitly re-anchors the affected sentence. A legitimate
-negative imperative such as "Não investigue o fundo..." must not be removed
-merely because generic `não X, mas Y` templates are blocked; that is a
+negative imperative such as "Do not investigate the bottom..." must not be removed
+merely because generic `not X, but Y` templates are blocked; that is a
 false-positive repair and should be restored.
 
 Canonical sentence rule:
@@ -211,15 +211,15 @@ punctuation, or clause count. Examples of operations:
 
 ```yaml
 rhetorical_operations:
-  - justificativa testemunhal
-  - contraste entre explicação pública e versão privada
-  - pedido negativo seguido de correção
-  - autodefesa de credibilidade do narrador
-  - inventário probatório
-  - ressalva epistemológica
-  - consequência ominosa
-  - enumeração documental
-  - fechamento de advertência
+  - testimonial justification
+  - contrast between public explanation and private account
+  - negative request followed by correction
+  - narrator credibility self-defense
+  - evidentiary inventory
+  - epistemological qualification
+  - ominous consequence
+  - documentary enumeration
+  - closing warning
 ```
 
 If a sentence is `weak_anchor` or `failed_anchor`, find a better real source
@@ -321,7 +321,7 @@ If any forbidden legacy field appears, the run is invalid.
 
 Generic rhetorical templates:
 
-Surface moves that models commonly invent, such as `não com X, mas com Y`, are
+Surface moves that models commonly invent, such as `not with X, but with Y`, are
 blocked unless the selected source sentence itself has an equivalent contrastive
 or corrective machine and the alignment cites that machine explicitly. Do not
 add a contrast just because it sounds literary.

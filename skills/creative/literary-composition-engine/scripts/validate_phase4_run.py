@@ -54,19 +54,19 @@ OPTIONAL_STORY_FILES = [
 ]
 
 DEFAULT_FORBIDDEN_TOKENS = [
-    "labirinto",
-    "espelho",
-    "infinito",
-    "biblioteca cósmica",
-    "relíquia mística",
-    "museu mágico",
-    "jornada",
-    "ressignificação",
+    "labyrinth",
+    "mirror",
+    "infinity",
+    "cosmic library",
+    "mystical relic",
+    "magical museum",
+    "journey",
+    "resignification",
 ]
 
 GENERIC_ALIGNMENT_MARKERS = [
-    "reutiliza apenas a operação formal",
-    "orientação declarativa, qualificação causal/concessiva ou inventário controlado",
+    "reuses only the formal operation",
+    "declarative orientation, causal/concessive qualification, or controlled inventory",
     "Original target sentence about",
     "does not reuse source entities, setting, images, conclusion, or memorable phrasing",
     "Target content is original to this run",
@@ -88,12 +88,12 @@ LEGACY_PATTERN_KEYS = {
 }
 
 SURFACE_GPTISM_PATTERNS = [
-    (re.compile(r"\bn[aã]o\s+com\s+[^,.;:!?]+,\s+mas\s+com\b", re.IGNORECASE), "not_with_but_with"),
-    (re.compile(r"\bn[aã]o\s+[^,.;:!?]{1,80},\s+mas\s+[^.;:!?]{1,120}", re.IGNORECASE), "not_x_but_y"),
+    (re.compile(r"\bnot\s+with\s+[^,.;:!?]+,\s+but\s+with\b", re.IGNORECASE), "not_with_but_with"),
+    (re.compile(r"\bnot\s+[^,.;:!?]{1,80},\s+but\s+[^.;:!?]{1,120}", re.IGNORECASE), "not_x_but_y"),
 ]
 
 NEUTRAL_STUB_LABEL_RE = re.compile(
-    r"\b(?:neutro|neutral)\s+p\d{3}\s+(?:frase|sentence)\s+\d+\s*:\s*",
+    r"\bneutral\s+p\d{3}\s+sentence\s+\d+\s*:\s*",
     re.IGNORECASE,
 )
 
@@ -108,9 +108,6 @@ STRICT_NOT_BUT_LICENSE_TERMS = [
     "negative opening followed by corrective",
     "contrastive replacement",
     "corrective replacement",
-    "não...mas",
-    "não com",
-    "não por",
 ]
 
 
