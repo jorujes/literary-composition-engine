@@ -1,7 +1,7 @@
 # Phase 4 Sentence Anchor Final Repair Pass
 
-Run this after `candidate.output.yaml` and the first independent sentence
-anchor audit exist, before `final.paragraph.yaml` and `paragraph.release.yaml`
+Run this after `candidate.output.yaml` and `blind_anchor_adversarial_audit.yaml`
+exist, before `final.paragraph.yaml` and `paragraph.release.yaml`
 are released.
 
 Goal: ensure every final target sentence is a necessary imitation of one real
@@ -14,15 +14,20 @@ Inputs:
 ```text
 paragraph.request.yaml
 neutral.paragraph.yaml
-sentence_meaning.plan.yaml
+sentence.plan.yaml
 sentence_anchor.matching.yaml
 source_sentence_anchor.selection.yaml
 paragraph.rewrite.plan.yaml
 candidate.output.yaml
-audit.report.yaml or sentence-anchor audit
+blind_anchor_adversarial_audit.yaml
 continuity.bible.yaml excerpt
 corpus/<author_id>.db
 ```
+
+If `blind_anchor_adversarial_audit.yaml` is missing, not blind, not passed, or
+contains any failed sentence, do not run this as a release pass. Return to the
+paragraph-local cycle and repair by rewriting the target sentence or replacing
+the source sentence. Do not improve only the explanation.
 
 Outputs:
 
@@ -121,6 +126,7 @@ sentence_anchor_final_audit:
       target_rhetorical_operation: ""
       source_rhetorical_operation: ""
       operation_match: "exact | close | partial | no"
+      prewriting_form_match_status: "strong_form_match | acceptable_form_match | weak_form_match | failed_form_match | missing"
       formal_match_checks:
         mood_match: "yes | acceptable_difference | no"
         clause_sequence_match: "yes | acceptable_difference | no"

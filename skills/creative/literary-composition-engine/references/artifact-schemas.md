@@ -134,11 +134,22 @@ runs/<author>/<run_id>/
   paragraphs/p001/
     paragraph.request.yaml
     neutral.paragraph.yaml
+    anchor.cycle.summary.yaml
+    anchor_cycles/
+      cycle_01/
+        sentence_meaning_plan.yaml
+        sentence_anchor.matching.yaml
+        source_sentence_anchor.selection.yaml
+        candidate.output.yaml
+        blind_anchor_adversarial_audit.yaml
+      cycle_02/
+        ...
     sentence_anchor.matching.yaml
     sentence.plan.yaml
     source_sentence_anchor.selection.yaml
     paragraph.rewrite.plan.yaml
     candidate.output.yaml
+    blind_anchor_adversarial_audit.yaml
     sentence_anchor.final_audit.yaml
     sentence_anchor.repair.plan.yaml
     repaired.candidate.output.yaml
@@ -165,9 +176,11 @@ references/schemas/phase4/writing-request.schema.yaml
 references/schemas/phase4/outline-candidates.schema.yaml
 references/schemas/phase4/story-blueprint.schema.yaml
 references/schemas/phase4/paragraph-plan.schema.yaml
+references/schemas/phase4/anchor-cycle-summary.schema.yaml
 references/schemas/phase4/sentence-anchor-matching.schema.yaml
 references/schemas/phase4/source-sentence-anchor-selection.schema.yaml
 references/schemas/phase4/candidate-output.schema.yaml
+references/schemas/phase4/blind-anchor-adversarial-audit.schema.yaml
 references/schemas/phase4/sentence-anchor-final-audit.schema.yaml
 references/schemas/phase4/final-output.schema.yaml
 references/schemas/phase4/final-release.schema.yaml

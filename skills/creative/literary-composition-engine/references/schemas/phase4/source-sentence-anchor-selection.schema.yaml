@@ -74,6 +74,7 @@ schema_contract:
           - ""
   must_not:
     - "Do not use sentence_pattern ids, skeletons, or extracted pattern descriptions."
+    - "Do not record fewer than five candidate source sentences considered when corpus size permits."
     - "Do not choose source sentences sequentially without local necessity."
     - "Do not copy source content, images, names, conclusions, or memorable phrasing."
     - "Do not select a source sentence without a prior strong_form_match or acceptable_form_match in sentence_anchor.matching.yaml."

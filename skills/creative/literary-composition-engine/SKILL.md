@@ -25,7 +25,7 @@ gate before release:
 1. **Phase 1: Corpus Preparation**: raw source files -> `corpus/<author>.db` with stories, paragraphs, sentences, and source sentence anchors.
 2. **Phase 2: Author Pack Construction**: corpus -> `theme.contract.yaml`, `style.contract.yaml`, `evidence.notes.yaml`, and `instruction.pairs.yaml`.
 3. **Phase 3: Artifact Validation & Calibration**: contracts/evidence -> validated author pack with release gate and runtime flags.
-4. **Phase 4: Writing Runtime**: user request -> outline/blueprint/paragraph plan -> neutral draft -> sentence-by-sentence source anchoring -> audited assembled prose.
+4. **Phase 4: Writing Runtime**: user request -> outline/blueprint/paragraph plan -> neutral draft -> paragraph-local sentence-anchor cycles -> blind adversarial audit -> repaired released prose.
 4.5. **Phase 4.5: Final Text Repair**: assembled prose -> local error repair, false-positive repair reversal, final repair audit, and approved output for release.
 
 The operator should be able to give Hermes an author, source files, and a writing request. Hermes must run the phase workflow without requiring manual steering between internal steps. All semantic/editorial decisions are made by agents. Python tools only persist, count, list, validate structure, index, and assemble already released artifacts.
@@ -76,7 +76,7 @@ references/prompts/validate_story.md      # validation agent prompt
 references/prompts/run_phase2_author_pack.md         # Phase 2 orchestration prompt
 references/prompts/run_phase3_validation.md          # Phase 3 orchestration prompt
 references/prompts/run_phase4_writing_runtime.md     # Phase 4 orchestration prompt
-references/prompts/audit_phase4_sentence_anchor.md   # independent sentence anchor audit prompt
+references/prompts/audit_phase4_sentence_anchor.md   # blind adversarial sentence anchor audit prompt
 references/prompts/run_phase4_sentence_anchor_repair_pass.md # final anchor repair/lock prompt
 references/prompts/run_phase45_final_text_repair.md  # story-level final text repair prompt
 ```
@@ -89,6 +89,12 @@ from `references/schemas/`. Do not invent fields when the schema already
 provides a place for the information. Do not add arbitrary numeric style scores,
 similarity scores, strength values, or confidence values. Mechanical corpus
 statistics are allowed only when a schema explicitly asks for them.
+
+Phase 4 release requires paragraph-local cycles. For each paragraph, generate,
+audit, and repair one paragraph at a time until `blind_anchor_adversarial_audit.yaml`
+passes. A failed sentence must be repaired by rewriting the target sentence or
+replacing its source sentence, never by improving the explanation. Only a passed
+cycle may be copied to the paragraph root and released.
 
 ## Phase 1 Workflow
 
@@ -404,8 +410,7 @@ paragraph_reader_contract
 → literal source_sentence_anchor selection from `sentences`
 → source_to_target_alignment_plan
 → target sentence generation
-→ independent source_sentence_fidelity_check
-→ sentence_sanity_check
+→ blind_anchor_adversarial_audit
 → sentence_anchor_final_repair_pass
 → paragraph audit
 → paragraph release
@@ -428,11 +433,13 @@ For each paragraph:
 ```text
 paragraph.request.yaml
 neutral.paragraph.yaml
+sentence.plan.yaml
+anchor.cycle.summary.yaml
 sentence_anchor.matching.yaml
 source_sentence_anchor.selection.yaml
 paragraph.rewrite.plan.yaml
 candidate.output.yaml
-sentence_sanity.audit.yaml
+blind_anchor_adversarial_audit.yaml
 sentence_anchor.final_audit.yaml
 sentence_anchor.repair.plan.yaml, if needed
 repaired.candidate.output.yaml, if needed

@@ -1,0 +1,48 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/paragraphs/<pid>/anchor.cycle.summary.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Record local sentence-anchor cycles for one paragraph and the approved cycle used for release."
+  required_top_level:
+    - "anchor_cycle_summary"
+  schema:
+    anchor_cycle_summary:
+      run_id: ""
+      paragraph_id: ""
+      max_cycles_allowed: 5
+      cycles_run: 0
+      approved_cycle: ""
+      approved_candidate_ref: "candidate.output.yaml | repaired.candidate.output.yaml"
+      blind_adversarial_audit_required: true
+      failed_sentence_repair_policy: "rewrite_target_or_replace_source_never_rejustify"
+      cycle_results:
+        - cycle_id: "cycle_01"
+          status: "approved | rejected | blocked"
+          candidate_ref: "anchor_cycles/cycle_01/candidate.output.yaml"
+          blind_audit_ref: "anchor_cycles/cycle_01/blind_anchor_adversarial_audit.yaml"
+          failed_sentences:
+            - sentence_id: ""
+              failure_reason: ""
+              repair_action: "rewrite_target | replace_source | block"
+          copied_to_release_root: true
+      blocker_results:
+        candidate_not_too_similar_to_neutral: true
+        no_repeated_final_sentence_in_run_so_far: true
+        no_boilerplate_sentence: true
+        no_fragmentary_payload: true
+        blind_audit_passed: true
+        semantic_coherence_passed: true
+  allowed_values:
+    anchor_cycle_summary.failed_sentence_repair_policy:
+      - "rewrite_target_or_replace_source_never_rejustify"
+    cycle_results.status:
+      - "approved"
+      - "rejected"
+      - "blocked"
+  must:
+    - "At least one cycle must run before paragraph release."
+    - "The approved cycle's selected source anchors and target sentences must be copied to the paragraph root artifacts."
+    - "The approved cycle result must declare copied_to_release_root: true."
+    - "Rejected cycles must name failed sentences and repair actions."
+  must_not:
+    - "Do not mark a cycle approved if blind_anchor_adversarial_audit.yaml is missing or failed."
+    - "Do not repair failed sentences by changing only the explanation."

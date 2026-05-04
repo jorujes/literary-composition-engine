@@ -11,6 +11,7 @@ schema_contract:
       run_id: ""
       paragraph_id: ""
       written_before_candidate_output: true
+      written_before_source_sentence_anchor_selection: true
       sentences:
         - sentence_id: ""
           semantic_payload_ref: ""
@@ -64,6 +65,7 @@ schema_contract:
       - "failed_form_match"
   must_not:
     - "Do not choose a source sentence before defining target form requirements."
+    - "Do not consider fewer than five candidate source sentences when corpus size permits."
     - "Do not use broad labels such as style, vibe, literary, or atmospheric as form matching."
     - "Do not pass weak_form_match or failed_form_match into source_sentence_anchor.selection.yaml."
     - "Do not treat question-to-declaration, event-to-inventory, or list-to-event mismatches as acceptable without explicit narrow justification."

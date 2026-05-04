@@ -1,0 +1,59 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/paragraphs/<pid>/blind_anchor_adversarial_audit.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: "Blind hostile audit of final target sentences against literal source sentences before paragraph release."
+  required_top_level:
+    - "blind_anchor_adversarial_audit"
+  schema:
+    blind_anchor_adversarial_audit:
+      run_id: ""
+      paragraph_id: ""
+      cycle_id: ""
+      audited_candidate_ref: "candidate.output.yaml | repaired.candidate.output.yaml"
+      auditor_visibility: "source_target_payload_only"
+      initial_policy: "all_sentences_failed_until_demonstrated"
+      overall_status: "passed | blocked"
+      sentence_results:
+        - sentence_id: ""
+          initial_status: "failed_until_demonstrated"
+          source_literal: ""
+          target_literal: ""
+          semantic_payload: ""
+          verdict: "passed | failed"
+          semantic_coherence_gate: "passed | failed"
+          formal_differences:
+            opening: ""
+            clause_sequence: ""
+            subordination_coordination: ""
+            rhetorical_turn: ""
+            closing: ""
+            punctuation: ""
+            length: ""
+            movement_category: ""
+          concrete_reason: ""
+          required_repair:
+            needed: false
+            repair_type: "rewrite_target | replace_source | none"
+            instruction: ""
+  allowed_values:
+    blind_anchor_adversarial_audit.auditor_visibility:
+      - "source_target_payload_only"
+    blind_anchor_adversarial_audit.initial_policy:
+      - "all_sentences_failed_until_demonstrated"
+    sentence_results.initial_status:
+      - "failed_until_demonstrated"
+    sentence_results.verdict:
+      - "passed"
+      - "failed"
+    sentence_results.semantic_coherence_gate:
+      - "passed"
+      - "failed"
+  must:
+    - "Audit receives only source literal, target literal, and semantic payload."
+    - "Every sentence starts as failed_until_demonstrated."
+    - "Approval requires concrete comparison of source and target form, not yes/no fields."
+    - "A sentence with incoherent target Portuguese fails even if the source form is close."
+  must_not:
+    - "Do not reuse generator status, matching status, or prior justification as evidence."
+    - "Do not approve by punctuation, length, clause count, or mood alone."
+    - "Do not repair by improving justification; rewrite the target or replace the source."

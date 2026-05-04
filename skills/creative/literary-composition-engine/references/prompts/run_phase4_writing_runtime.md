@@ -36,12 +36,11 @@ Workflow:
 7. For each paragraph:
    - write `paragraph.request.yaml`;
    - draft `neutral.paragraph.yaml` as plain neutral prose;
-   - create `sentence_meaning_plan` with semantic payload only, no final prose;
-   - select literal source sentence anchors directly from `sentences`;
-   - create `source_to_target_alignment_plan`;
+   - run paragraph-local sentence-anchor cycles under `anchor_cycles/cycle_XX/`;
+   - copy the approved cycle's `sentence_meaning_plan.yaml` to the paragraph root as `sentence.plan.yaml`;
+   - copy the approved cycle's `sentence_anchor.matching.yaml`, `source_sentence_anchor.selection.yaml`, `candidate.output.yaml`, and `blind_anchor_adversarial_audit.yaml` to the paragraph root;
+   - write `anchor.cycle.summary.yaml`;
    - write `paragraph.rewrite.plan.yaml`;
-   - generate `candidate.output.yaml`;
-   - run independent sentence anchor audit using `references/prompts/audit_phase4_sentence_anchor.md`;
    - run the final sentence-anchor repair pass using `references/prompts/run_phase4_sentence_anchor_repair_pass.md`;
    - run paragraph audit;
    - repair/replan until no blockers;
@@ -73,6 +72,108 @@ removing labels from the neutral draft yields the candidate or final paragraph,
 the run is invalid and must regenerate the neutral draft.
 
 If mechanical validation fails, repair artifacts and rerun it before returning.
+
+Paragraph-local anchor cycle rule:
+
+Do not release a paragraph after a single generator self-check. Each paragraph
+must pass a local cycle:
+
+```text
+sentence_meaning_plan
+-> sentence_anchor.matching
+-> source_sentence_anchor.selection
+-> candidate.output
+-> blind_anchor_adversarial_audit
+-> repair failed sentences or approve cycle
+```
+
+Write cycle artifacts first under:
+
+```text
+paragraphs/<pid>/anchor_cycles/cycle_01/
+  sentence_meaning_plan.yaml
+  sentence_anchor.matching.yaml
+  source_sentence_anchor.selection.yaml
+  candidate.output.yaml
+  blind_anchor_adversarial_audit.yaml
+```
+
+If the blind audit rejects any sentence, create `cycle_02`, then `cycle_03`, up
+to `max_cycles_allowed` in `anchor.cycle.summary.yaml`. Do not repair a failed
+sentence by improving the explanation. The only allowed repairs are:
+
+```yaml
+failed_sentence_repairs:
+  - "rewrite target sentence while preserving semantic payload"
+  - "replace source sentence with a better literal corpus sentence"
+  - "block paragraph and request replan if no source can carry the payload"
+```
+
+After a cycle passes, copy the approved cycle files to the paragraph root using
+the standard root artifact names. Copy `sentence_meaning_plan.yaml` as
+`sentence.plan.yaml`; do not leave the paragraph root without `sentence.plan.yaml`.
+The validator reads the root files, and `anchor.cycle.summary.yaml` records
+which cycle was approved.
+
+Blind adversarial audit rule:
+
+`blind_anchor_adversarial_audit.yaml` is mandatory before `sentence_anchor.final_audit.yaml`.
+The auditor receives only:
+
+```text
+source literal sentence
+target literal sentence
+semantic payload
+```
+
+The auditor must not see or rely on:
+
+```text
+selected_form_match_status
+why_selected_before_writing
+source_form_analysis from the generator
+final_anchor_status
+prior self-audits
+```
+
+Every sentence begins as:
+
+```yaml
+initial_status: "failed_until_demonstrated"
+```
+
+To pass, the audit must compare concrete source and target form:
+
+```yaml
+formal_differences:
+  opening: ""
+  clause_sequence: ""
+  subordination_coordination: ""
+  rhetorical_turn: ""
+  closing: ""
+  punctuation: ""
+  length: ""
+  movement_category: ""
+semantic_coherence_gate: "passed | failed"
+```
+
+The audit must fail a sentence if the target is semantically incoherent,
+idiomatically broken, translation-like, or locally artificial, even when the
+formal anchor seems close.
+
+Release blockers for every paragraph:
+
+```yaml
+paragraph_anchor_cycle_blockers:
+  - "anchor.cycle.summary.yaml missing"
+  - "blind_anchor_adversarial_audit.yaml missing or not blind"
+  - "candidate too similar to neutral paragraph"
+  - "exact final sentence repeated in prior released text"
+  - "source sentence too short or formally mismatched for target"
+  - "fragmentary semantic payload"
+  - "boilerplate sentence such as Anotei o fato / Hoje ao rever / A prudência mandaria when not locally necessary"
+  - "repair only changes justification instead of target/source"
+```
 
 Phase 4.5 final text repair rule:
 
@@ -139,11 +240,15 @@ target sentence exists. It prevents the model from choosing a random source
 sentence and retrojustifying it after generation.
 
 For every planned target sentence, first define formal requirements from the
-semantic payload:
+semantic payload. Then retrieve and record at least five candidate source
+sentences when the corpus has enough candidates; fewer candidates are allowed
+only if the artifact states the corpus search was exhausted for that sentence.
 
 ```yaml
 sentence_anchor_matching:
   paragraph_id: ""
+  written_before_candidate_output: true
+  written_before_source_sentence_anchor_selection: true
   sentences:
     - sentence_id: ""
       semantic_payload_ref: ""
@@ -161,6 +266,7 @@ sentence_anchor_matching:
         - "yes/no question when target must be factual declaration"
         - "bodily crisis event when target must be inventory or assignment"
       candidate_source_sentences:
+        # record at least five candidates when the corpus has enough options
         - source_sentence_ref: {}
           source_sentence_text: ""
           source_form_analysis:

@@ -11,6 +11,7 @@ boilerplate alignment, or sequential source-sentence assignment.
 from __future__ import annotations
 
 import argparse
+import difflib
 import re
 from pathlib import Path
 from typing import Any
@@ -24,10 +25,13 @@ except ModuleNotFoundError:  # pragma: no cover - environment dependent
 REQUIRED_PARAGRAPH_FILES = [
     "paragraph.request.yaml",
     "neutral.paragraph.yaml",
+    "sentence.plan.yaml",
+    "anchor.cycle.summary.yaml",
     "sentence_anchor.matching.yaml",
     "source_sentence_anchor.selection.yaml",
     "paragraph.rewrite.plan.yaml",
     "candidate.output.yaml",
+    "blind_anchor_adversarial_audit.yaml",
     "audit.report.yaml",
     "sentence_anchor.final_audit.yaml",
     "final.anchor.lock.yaml",
@@ -63,6 +67,10 @@ GENERIC_ALIGNMENT_MARKERS = [
     "source sentence text was not copied or exposed",
     "formal rhetorical move and clause skeleton",
     "punctuation and qualification frame",
+    "comparada literalmente no motivo",
+    "avaliada literalmente no motivo",
+    "preserves source order of opening pressure",
+    "delayed assertion and qualified closure",
 ]
 
 LEGACY_PATTERN_KEYS = {
@@ -174,6 +182,16 @@ def sentence_count(text: str) -> int:
     return len(re.findall(r"[^.!?…]+[.!?…]", masked))
 
 
+def split_sentences(text: str) -> list[str]:
+    masked = re.sub(
+        r"\b(?:[A-ZÀ-ÖØ-Þ]\.){2,}",
+        lambda match: match.group(0).replace(".", "<DOT>"),
+        text or "",
+    )
+    parts = re.findall(r"[^.!?…]+[.!?…]", masked)
+    return [part.replace("<DOT>", ".").strip() for part in parts if part.strip()]
+
+
 def word_count(text: str) -> int:
     return len(re.findall(r"\b[\wÀ-ÖØ-öø-ÿ]+\b", text or ""))
 
@@ -196,6 +214,27 @@ def duplicate_ratio(values: list[str]) -> float:
     for value in cleaned:
         counts[value] = counts.get(value, 0) + 1
     return max(counts.values()) / len(cleaned)
+
+
+def similarity_ratio(left: str, right: str) -> float:
+    left_norm = normalize_prose(left)
+    right_norm = normalize_prose(right)
+    if not left_norm or not right_norm:
+        return 0.0
+    return difflib.SequenceMatcher(None, left_norm, right_norm).ratio()
+
+
+def repeated_items(values: list[str], max_count: int, min_words: int) -> list[tuple[str, int]]:
+    counts: dict[str, tuple[str, int]] = {}
+    for value in values:
+        normalized = normalize_prose(value)
+        if not normalized or word_count(value) < min_words:
+            continue
+        original, count = counts.get(normalized, (value.strip(), 0))
+        counts[normalized] = (original, count + 1)
+    repeated = [(original, count) for original, count in counts.values() if count > max_count]
+    repeated.sort(key=lambda item: item[1], reverse=True)
+    return repeated
 
 
 def source_story_from_ref(ref: Any) -> str:
@@ -320,6 +359,7 @@ def validate(args: argparse.Namespace) -> int:
     all_source_fidelity: list[str] = []
     all_semantic_independence: list[str] = []
     all_selection_reasons: list[str] = []
+    all_final_sentences: list[str] = []
     final_anchor_locks = 0
     final_anchor_repairs_required = 0
 
@@ -387,8 +427,188 @@ def validate(args: argparse.Namespace) -> int:
             finding("missing_final_paragraph_text", pdir / "final.paragraph.yaml", f"{pid} has no final text")
         else:
             final_texts.append(final_text)
+            all_final_sentences.extend(split_sentences(final_text))
 
         neutral = artifact_root(loaded.get("neutral.paragraph.yaml"), "neutral_paragraph")
+        cycle_summary = loaded.get("anchor.cycle.summary.yaml") or {}
+        if not isinstance(cycle_summary, dict) or "anchor_cycle_summary" not in cycle_summary:
+            finding(
+                "missing_anchor_cycle_summary_root",
+                pdir / "anchor.cycle.summary.yaml",
+                f"{pid} lacks anchor_cycle_summary",
+            )
+            cycle_summary_root = {}
+        else:
+            cycle_summary_root = cycle_summary.get("anchor_cycle_summary")
+            if not isinstance(cycle_summary_root, dict):
+                finding(
+                    "bad_anchor_cycle_summary_root",
+                    pdir / "anchor.cycle.summary.yaml",
+                    f"{pid} anchor_cycle_summary must be an object",
+                )
+                cycle_summary_root = {}
+        if cycle_summary_root:
+            cycles_run = cycle_summary_root.get("cycles_run")
+            if not isinstance(cycles_run, int) or cycles_run < 1:
+                finding(
+                    "anchor_cycle_summary_bad_cycle_count",
+                    pdir / "anchor.cycle.summary.yaml",
+                    f"{pid} cycles_run must be an integer >= 1",
+                )
+            if missing_or_empty(cycle_summary_root.get("approved_cycle")):
+                finding(
+                    "anchor_cycle_summary_missing_approved_cycle",
+                    pdir / "anchor.cycle.summary.yaml",
+                    f"{pid} lacks approved_cycle",
+                )
+            if cycle_summary_root.get("blind_adversarial_audit_required") is not True:
+                finding(
+                    "anchor_cycle_summary_blind_audit_not_required",
+                    pdir / "anchor.cycle.summary.yaml",
+                    f"{pid} must declare blind_adversarial_audit_required: true",
+                )
+            if cycle_summary_root.get("failed_sentence_repair_policy") != "rewrite_target_or_replace_source_never_rejustify":
+                finding(
+                    "anchor_cycle_summary_bad_repair_policy",
+                    pdir / "anchor.cycle.summary.yaml",
+                    f"{pid} failed_sentence_repair_policy must forbid justification-only repair",
+                )
+            cycle_results = cycle_summary_root.get("cycle_results")
+            if not isinstance(cycle_results, list) or not cycle_results:
+                finding(
+                    "anchor_cycle_summary_missing_cycle_results",
+                    pdir / "anchor.cycle.summary.yaml",
+                    f"{pid} lacks cycle_results",
+                )
+            else:
+                approved_cycle = cycle_summary_root.get("approved_cycle")
+                approved_result = next(
+                    (
+                        item
+                        for item in cycle_results
+                        if isinstance(item, dict) and item.get("cycle_id") == approved_cycle
+                    ),
+                    None,
+                )
+                if not isinstance(approved_result, dict):
+                    finding(
+                        "anchor_cycle_summary_approved_cycle_not_in_results",
+                        pdir / "anchor.cycle.summary.yaml",
+                        f"{pid} approved_cycle is not represented in cycle_results",
+                    )
+                elif approved_result.get("copied_to_release_root") is not True:
+                    finding(
+                        "anchor_cycle_summary_not_copied_to_root",
+                        pdir / "anchor.cycle.summary.yaml",
+                        f"{pid} approved cycle must declare copied_to_release_root: true",
+                    )
+        blind_audit = loaded.get("blind_anchor_adversarial_audit.yaml") or {}
+        if not isinstance(blind_audit, dict) or "blind_anchor_adversarial_audit" not in blind_audit:
+            blind_root = {}
+        else:
+            blind_root = blind_audit.get("blind_anchor_adversarial_audit")
+            if not isinstance(blind_root, dict):
+                blind_root = {}
+        blind_results: list[Any] = []
+        if not blind_root:
+            finding(
+                "missing_blind_anchor_adversarial_audit_root",
+                pdir / "blind_anchor_adversarial_audit.yaml",
+                f"{pid} lacks blind_anchor_adversarial_audit",
+            )
+        else:
+            if blind_root.get("auditor_visibility") != "source_target_payload_only":
+                finding(
+                    "blind_anchor_audit_not_blind",
+                    pdir / "blind_anchor_adversarial_audit.yaml",
+                    f"{pid} blind audit must declare auditor_visibility: source_target_payload_only",
+                )
+            if blind_root.get("initial_policy") != "all_sentences_failed_until_demonstrated":
+                finding(
+                    "blind_anchor_audit_bad_initial_policy",
+                    pdir / "blind_anchor_adversarial_audit.yaml",
+                    f"{pid} blind audit must start every sentence as failed_until_demonstrated",
+                )
+            if blind_root.get("overall_status") != "passed":
+                finding(
+                    "blind_anchor_audit_not_passed",
+                    pdir / "blind_anchor_adversarial_audit.yaml",
+                    f"{pid} blind audit overall_status is {blind_root.get('overall_status')!r}",
+                )
+            blind_results = blind_root.get("sentence_results") or blind_root.get("audit_items") or []
+            if not isinstance(blind_results, list) or not blind_results:
+                finding(
+                    "blind_anchor_audit_missing_sentence_results",
+                    pdir / "blind_anchor_adversarial_audit.yaml",
+                    f"{pid} blind audit lacks sentence_results",
+                )
+            else:
+                for result in blind_results:
+                    if not isinstance(result, dict):
+                        continue
+                    sentence_id = result.get("sentence_id", "?")
+                    if result.get("initial_status") != "failed_until_demonstrated":
+                        finding(
+                            "blind_anchor_audit_bad_initial_status",
+                            pdir / "blind_anchor_adversarial_audit.yaml",
+                            f"{pid}/{sentence_id} must begin as failed_until_demonstrated",
+                        )
+                    if result.get("verdict") != "passed":
+                        finding(
+                            "blind_anchor_audit_sentence_not_passed",
+                            pdir / "blind_anchor_adversarial_audit.yaml",
+                            f"{pid}/{sentence_id} verdict is {result.get('verdict')!r}",
+                        )
+                    if result.get("semantic_coherence_gate") not in {"passed", "clean"}:
+                        finding(
+                            "blind_anchor_audit_semantic_coherence_not_passed",
+                            pdir / "blind_anchor_adversarial_audit.yaml",
+                            f"{pid}/{sentence_id} semantic_coherence_gate is {result.get('semantic_coherence_gate')!r}",
+                        )
+                    source_literal = result.get("source_literal")
+                    target_literal = result.get("target_literal")
+                    if missing_or_empty(source_literal) or missing_or_empty(target_literal):
+                        finding(
+                            "blind_anchor_audit_missing_literals",
+                            pdir / "blind_anchor_adversarial_audit.yaml",
+                            f"{pid}/{sentence_id} must include source_literal and target_literal",
+                        )
+                    reason = result.get("concrete_reason")
+                    if not isinstance(reason, str) or word_count(reason) < args.min_blind_audit_reason_words:
+                        finding(
+                            "blind_anchor_audit_reason_too_thin",
+                            pdir / "blind_anchor_adversarial_audit.yaml",
+                            f"{pid}/{sentence_id} concrete_reason is missing or too thin",
+                        )
+                    formal = result.get("formal_differences") or result.get("concrete_form_differences_examined")
+                    if not isinstance(formal, dict):
+                        finding(
+                            "blind_anchor_audit_missing_formal_differences",
+                            pdir / "blind_anchor_adversarial_audit.yaml",
+                            f"{pid}/{sentence_id} lacks formal_differences",
+                        )
+                    else:
+                        for key in [
+                            "opening",
+                            "clause_sequence",
+                            "subordination_coordination",
+                            "rhetorical_turn",
+                            "closing",
+                            "punctuation",
+                            "length",
+                            "movement_category",
+                        ]:
+                            value = formal.get(key)
+                            if missing_or_empty(value) or flatten_text(value).strip().casefold() in {
+                                "comparada literalmente no motivo",
+                                "avaliada literalmente no motivo",
+                                "categoria preservada conforme motivo",
+                            }:
+                                finding(
+                                    "blind_anchor_audit_generic_formal_difference",
+                                    pdir / "blind_anchor_adversarial_audit.yaml",
+                                    f"{pid}/{sentence_id} formal_differences.{key} is missing or generic",
+                                )
         matching_artifact = loaded.get("sentence_anchor.matching.yaml") or {}
         matching_root = artifact_root(matching_artifact, "sentence_anchor_matching")
         matching_entries: dict[str, dict[str, Any]] = {}
@@ -403,6 +623,12 @@ def validate(args: argparse.Namespace) -> int:
                 "sentence_anchor_matching_not_prewrite",
                 pdir / "sentence_anchor.matching.yaml",
                 f"{pid} sentence_anchor.matching.yaml must declare written_before_candidate_output: true",
+            )
+        if matching_root.get("written_before_source_sentence_anchor_selection") is not True:
+            finding(
+                "sentence_anchor_matching_not_before_selection",
+                pdir / "sentence_anchor.matching.yaml",
+                f"{pid} sentence_anchor.matching.yaml must declare written_before_source_sentence_anchor_selection: true",
             )
         matching_sentences = matching_root.get("sentences") if isinstance(matching_root, dict) else None
         if not isinstance(matching_sentences, list) or not matching_sentences:
@@ -448,11 +674,11 @@ def validate(args: argparse.Namespace) -> int:
                         f"{pid}/{sentence_id or '?'} selected_form_match_status is {selected_status!r}",
                     )
                 candidates = item.get("candidate_source_sentences")
-                if not isinstance(candidates, list) or len(candidates) < 3:
+                if not isinstance(candidates, list) or len(candidates) < args.min_source_candidates:
                     finding(
                         "sentence_anchor_matching_too_few_candidates",
                         pdir / "sentence_anchor.matching.yaml",
-                        f"{pid}/{sentence_id or '?'} must record at least three form-matching candidates",
+                        f"{pid}/{sentence_id or '?'} must record at least {args.min_source_candidates} form-matching candidates",
                     )
                 else:
                     if not any(candidate.get("form_match_status") in PASSING_FORM_MATCH_STATUSES for candidate in candidates if isinstance(candidate, dict)):
@@ -651,6 +877,12 @@ def validate(args: argparse.Namespace) -> int:
                 f"{pid} neutral draft contains artificial sentence labels; neutral text must be plain content, not labeled final prose",
             )
         candidate_text = text_field(candidate, "candidate_text", "text")
+        if not candidate_text.strip():
+            finding(
+                "missing_candidate_text",
+                pdir / locked_candidate_ref,
+                f"{pid} locked candidate has no candidate_text/text",
+            )
         if candidate_text and final_text and candidate_text.strip() != final_text.strip():
             finding(
                 "locked_candidate_differs_from_final_paragraph",
@@ -660,6 +892,13 @@ def validate(args: argparse.Namespace) -> int:
         neutral_plain = normalize_prose(strip_neutral_stub_labels(neutral_text))
         candidate_plain = normalize_prose(candidate_text)
         final_plain = normalize_prose(final_text)
+        neutral_candidate_similarity = similarity_ratio(strip_neutral_stub_labels(neutral_text), candidate_text)
+        if neutral_candidate_similarity > args.max_neutral_candidate_similarity:
+            finding(
+                "candidate_too_similar_to_neutral",
+                pdir / "candidate.output.yaml",
+                f"{pid} candidate/neutral similarity is {neutral_candidate_similarity:.3f}, above {args.max_neutral_candidate_similarity:.3f}",
+            )
         if candidate_plain and neutral_plain and candidate_plain == neutral_plain:
             finding("candidate_equals_neutral", pdir / "candidate.output.yaml", f"{pid} candidate equals neutral")
         if final_plain and neutral_plain and final_plain == neutral_plain:
@@ -674,6 +913,12 @@ def validate(args: argparse.Namespace) -> int:
             finding("missing_sentence_mapping", pdir / "candidate.output.yaml", f"{pid} has no sentence_mapping")
         else:
             sentence_mapping_count += len(mappings)
+            if isinstance(blind_results, list) and blind_results and len(blind_results) != len(mappings):
+                finding(
+                    "blind_anchor_audit_count_mismatch",
+                    pdir / "blind_anchor_adversarial_audit.yaml",
+                    f"{pid} blind audit has {len(blind_results)} sentence_results but candidate has {len(mappings)} mappings",
+                )
             if isinstance(final_audit_results, list) and final_audit_results and len(final_audit_results) != len(mappings):
                 finding(
                     "sentence_anchor_final_audit_count_mismatch",
@@ -772,11 +1017,11 @@ def validate(args: argparse.Namespace) -> int:
                         pdir / "source_sentence_anchor.selection.yaml",
                         f"{pid}/{sentence_id or '?'} lacks selected_source_sentence_text",
                     )
-                if not isinstance(item.get("candidate_source_sentences_considered"), list) or len(item.get("candidate_source_sentences_considered") or []) < 2:
+                if not isinstance(item.get("candidate_source_sentences_considered"), list) or len(item.get("candidate_source_sentences_considered") or []) < args.min_source_candidates:
                     finding(
                         "missing_rejected_source_sentence_candidates",
                         pdir / "source_sentence_anchor.selection.yaml",
-                        f"{pid}/{sentence_id or '?'} must record multiple candidate source sentences considered",
+                        f"{pid}/{sentence_id or '?'} must record at least {args.min_source_candidates} candidate source sentences considered",
                     )
                 else:
                     for candidate in item.get("candidate_source_sentences_considered") or []:
@@ -1061,6 +1306,19 @@ def validate(args: argparse.Namespace) -> int:
                 )
 
     if sentence_mapping_count:
+        if args.max_repeated_final_sentence_count:
+            repeated_final_sentences = repeated_items(
+                all_final_sentences,
+                args.max_repeated_final_sentence_count,
+                args.min_repeated_final_sentence_words,
+            )
+            if repeated_final_sentences:
+                example, count = repeated_final_sentences[0]
+                finding(
+                    "repeated_final_sentence",
+                    run,
+                    f"final sentence repeated {count} times (max {args.max_repeated_final_sentence_count}): {example[:220]}",
+                )
         if all_source_refs:
             story_counts: dict[str, int] = {}
             for source_ref in all_source_refs:
@@ -1163,6 +1421,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-duplicate-source-fidelity-ratio", type=float, default=0.0, help="Optional run-specific duplicate-fidelity ceiling; 0 disables.")
     parser.add_argument("--max-duplicate-semantic-independence-ratio", type=float, default=0.0, help="Optional run-specific duplicate-independence ceiling; 0 disables.")
     parser.add_argument("--max-duplicate-selection-reason-ratio", type=float, default=0.0, help="Optional run-specific duplicate-selection-reason ceiling; 0 disables.")
+    parser.add_argument("--max-neutral-candidate-similarity", type=float, default=0.92, help="Block paragraph candidates that are effectively the neutral draft.")
+    parser.add_argument("--max-repeated-final-sentence-count", type=int, default=1, help="Block exact repeated final sentences above this count; use 0 to disable.")
+    parser.add_argument("--min-repeated-final-sentence-words", type=int, default=8, help="Minimum sentence length for repeated-final-sentence blocking.")
+    parser.add_argument("--min-blind-audit-reason-words", type=int, default=18, help="Minimum length for concrete blind audit reasons.")
+    parser.add_argument("--min-source-candidates", type=int, default=5, help="Minimum source candidates considered per planned sentence.")
     parser.add_argument(
         "--forbidden-token",
         action="append",

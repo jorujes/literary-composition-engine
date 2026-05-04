@@ -1,30 +1,41 @@
-# Independent Phase 4 Sentence Anchor Audit
+# Blind Phase 4 Sentence Anchor Adversarial Audit
 
-Audit a generated paragraph sentence by sentence. This is an independent gate:
-do not reuse the generator's self-audit as evidence.
+Audit a generated paragraph sentence by sentence. This is a blind adversarial
+gate: do not reuse the generator's self-audit, matching status, prior source
+analysis, or final lock as evidence.
 
 Inputs:
 
 ```text
-paragraph.request.yaml
-neutral.paragraph.yaml
-source_sentence_anchor.selection.yaml
-sentence_anchor.matching.yaml
-paragraph.rewrite.plan.yaml
-candidate.output.yaml
-continuity.bible.yaml excerpt
-corpus/<author_id>.db
+source literal sentence
+target literal sentence
+semantic payload for that target sentence
 ```
 
-For each sentence, verify:
+The auditor must not receive:
 
-1. The sentence meaning plan existed before source selection and did not contain the final sentence.
-2. A real source sentence was selected by `story_id`, `sentence_id`, position, `source_text_hash`, and literal `selected_source_sentence_text`.
-3. `sentence_anchor.matching.yaml` was written before generation and selected this source as `strong_form_match` or `acceptable_form_match`.
-4. The selected source sentence is necessary for this target sentence's semantic job and formal requirements.
-5. The target sentence's rhetorical operation matches the source sentence's concrete machinery, not just punctuation, length, broad clause count, or a shared label.
-6. `source_to_target_alignment_plan` maps parts of the literal source sentence to parts of the target sentence with sentence-specific detail.
-7. The target sentence preserves the selected source sentence's actual architecture:
+```text
+selected_form_match_status
+why_selected_before_writing
+source_form_analysis from the generator
+source_sentence_fidelity from candidate.output.yaml
+target_semantic_independence from candidate.output.yaml
+final_anchor_status
+```
+
+Every sentence starts as:
+
+```yaml
+initial_status: "failed_until_demonstrated"
+```
+
+For each source/target/payload triple, verify:
+
+1. The target says the planned semantic payload clearly and completely.
+2. The target is coherent idiomatic prose in its output language.
+3. The source sentence is formally capable of carrying this payload.
+4. The target sentence's rhetorical operation matches the source sentence's concrete machinery, not just punctuation, length, broad clause count, or a shared label.
+5. The target sentence preserves the selected source sentence's actual architecture:
    - mood or equivalent force;
    - clause count and order;
    - coordination/subordination;
@@ -34,14 +45,11 @@ For each sentence, verify:
    - enumeration shape;
    - opening/closing move;
    - relation between predicates.
-8. Punctuation is a consequence of the alignment, not a proxy for approval.
-9. No source content, image, scene, conclusion, entity, object, or memorable phrasing was copied.
-10. Every agent/pronoun/deictic marker is grounded in the paragraph, blueprint, or continuity.
-11. The target sentence still says the planned meaning clearly.
-12. No new content was introduced to complete an inherited structure.
-13. Any generic rhetorical template in the target, such as `not with X, but with Y`, is licensed by an equivalent contrastive/corrective machine in the selected source sentence and cited in the alignment.
-14. The selected anchors are not assigned sequentially from one source work as a convenience. If several consecutive anchors come from the same story, each one must have a local necessity rationale and rejected alternatives.
-15. No legacy `sentence_pattern` fields appear anywhere in the paragraph artifacts.
+6. Punctuation is a consequence of the alignment, not a proxy for approval.
+7. No source content, image, scene, conclusion, entity, object, or memorable phrasing was copied.
+8. Every agent/pronoun/deictic marker is grounded in the payload or paragraph context.
+9. No new content was introduced merely to complete an inherited structure.
+10. Any generic rhetorical template in the target, such as `not with X, but with Y`, is licensed by an equivalent contrastive/corrective machine in the selected source sentence.
 
 Do not accept retrojustification. A source sentence that is interrogative cannot
 anchor a factual declaration unless the matching artifact proves an equivalent
@@ -49,48 +57,62 @@ questioning force in the target. A bodily event sentence cannot anchor an
 administrative inventory. A sentence listing objects cannot anchor an event
 sequence. These are `blocked_for_replan`, not taste issues.
 
-Generic spans are blockers. Reject `source_words_or_span` values like "opening
-syntax", "main clause", "clause skeleton", "qualification", or "development"
-unless the artifact also cites literal source words and explains their local
-sentence job.
+Semantic sanity is a release gate. Reject targets that are formally clever but
+wrong in prose, for example:
+
+- category errors: a room listed among objects in itself;
+- bad antecedents;
+- translation-like phrases;
+- artificial technical vocabulary;
+- predicates that do not fit their subject;
+- vague abstractions used to fill a source sentence's shape.
+
+If a sentence fails, the next cycle must rewrite the target sentence or replace
+the source sentence. Do not improve only the justification.
 
 Findings:
 
 ```yaml
-sentence_anchor_audit:
-  overall_status: "passed | needs_repair | blocked_for_replan"
+blind_anchor_adversarial_audit:
+  run_id: ""
+  paragraph_id: ""
+  cycle_id: ""
+  audited_candidate_ref: "candidate.output.yaml"
+  auditor_visibility: "source_target_payload_only"
+  initial_policy: "all_sentences_failed_until_demonstrated"
+  overall_status: "passed | blocked"
   sentence_results:
     - sentence_id: ""
-      status: "passed | needs_repair | blocked_for_replan"
-      selected_source_is_necessary: "yes | no"
-      matching_artifact_check: "passed | missing | failed"
-      prewriting_form_match_status: "strong_form_match | acceptable_form_match | weak_form_match | failed_form_match | missing"
-      rejected_candidate_check: ""
-      source_sentence_fidelity: ""
-      target_rhetorical_operation: ""
-      source_rhetorical_operation: ""
-      operation_match: "exact | close | partial | no"
-      formal_match_checks:
-        mood_match: "yes | acceptable_difference | no"
-        clause_sequence_match: "yes | acceptable_difference | no"
-        coordination_subordination_match: "yes | acceptable_difference | no"
-        turn_logic_match: "yes | acceptable_difference | no"
-        punctuation_function_match: "yes | acceptable_difference | no"
-        category_fit: "yes | acceptable_difference | no"
-      semantic_sanity: ""
-      overcopy_check: ""
-      generic_template_check: ""
-      required_repair: ""
+      initial_status: "failed_until_demonstrated"
+      source_literal: ""
+      target_literal: ""
+      semantic_payload: ""
+      verdict: "passed | failed"
+      semantic_coherence_gate: "passed | failed"
+      formal_differences:
+        opening: ""
+        clause_sequence: ""
+        subordination_coordination: ""
+        rhetorical_turn: ""
+        closing: ""
+        punctuation: ""
+        length: ""
+        movement_category: ""
+      concrete_reason: >
+        Compare source and target concretely. Mention exact source words and
+        exact target words. Do not write yes/no boilerplate.
+      required_repair:
+        needed: false
+        repair_type: "rewrite_target | replace_source | none"
+        instruction: ""
 ```
 
 Block if:
 
-- source selection is generic or interchangeable;
-- pre-writing `sentence_anchor.matching.yaml` is missing or does not select a strong/acceptable form match;
-- alignment is boilerplate;
+- the audit is not blind;
+- source/target/payload literals are missing;
+- the explanation is generic or does not cite exact source and target movement;
 - source and target differ in mood, clause order, turn logic, or category without a pre-declared acceptable difference;
-- the paragraph uses `sentence.pattern.selection.yaml`, `source_sentence_pattern_id`, `pattern_structural_match`, `why_this_pattern_is_necessary`, `clause_skeleton`, or any other `sentence_pattern` field;
-- the selected source sentence was chosen only because it was next in sequence;
 - the sentence is only superficially authorial by punctuation;
 - the sentence loses planned meaning;
 - the sentence has category error, unclear agent, broken predicate fit, unresolved pronoun, or copied discourse marker without narrative need.
