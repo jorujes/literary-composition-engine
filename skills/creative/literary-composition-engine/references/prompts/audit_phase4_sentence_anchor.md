@@ -50,6 +50,23 @@ For each source/target/payload triple, verify:
 8. Every agent/pronoun/deictic marker is grounded in the payload or paragraph context.
 9. No new content was introduced merely to complete an inherited structure.
 10. Any generic rhetorical template in the target, such as `not with X, but with Y`, is licensed by an equivalent contrastive/corrective machine in the selected source sentence.
+11. Source semantic cargo was not translated into the target. The target may
+    inherit architecture, but must not inherit memorable source images such as
+    cosmic seas, torture drops, grey infinities, exact dream geography, named
+    objects, conclusions, or entities unless the user's blueprint independently
+    requires that content.
+    This also applies inside formal source parts: do not turn a source phrase
+    like "enfeebled by a previous war" into target content like "enfraquecidos
+    por água" unless the semantic payload independently requires weakening.
+12. Semicolons are licensed by the source sentence. If the selected source has
+    no `;`, the target must not add `;`; if the target has more `;` than the
+    source, mark it `blocked_for_repair`.
+13. The source and target share the same concrete narrative action type and
+    comparable entity/action roles. Broad analogy is not enough. A source about
+    expedition logistics cannot anchor ecclesiastical routine merely because
+    both contain movement; a source about illness, hospitality, or social
+    reaction cannot anchor a clerical evidentiary statement merely because both
+    can mention a named person.
 
 Do not accept retrojustification. A source sentence that is interrogative cannot
 anchor a factual declaration unless the matching artifact proves an equivalent
@@ -112,6 +129,11 @@ blind_anchor_adversarial_audit:
         punctuation: ""
         length: ""
         movement_category: ""
+      narrative_action_match: "exact | close | loose | mismatch"
+      entity_action_role_match: "exact | close | loose | mismatch"
+      why_action_match_is_not_loose_analogy: >
+        Cite exact source and target spans that perform the same concrete
+        action with comparable roles.
       concrete_reason: >
         Compare source and target concretely. Mention exact source words and
         exact target words. Do not write yes/no boilerplate or a reusable
@@ -129,9 +151,13 @@ Block if:
 - the explanation is generic or does not cite exact source and target movement;
 - the explanation does not include literal spans from both source and target;
 - source and target differ in mood, clause order, turn logic, or category without a pre-declared acceptable difference;
+- source and target share only broad analogy instead of the same concrete
+  narrative action and comparable entity/action roles;
 - source and target differ in dialect/register or length beyond what the local form can carry;
 - the sentence is only superficially authorial by punctuation;
 - the sentence loses planned meaning;
+- the target translates source imagery or conceptual conclusion instead of
+  replacing it with the planned semantic payload;
 - the sentence has category error, unclear agent, broken predicate fit, unresolved pronoun, or copied discourse marker without narrative need.
 - the target uses a familiar LLM contrast/correction formula that is not present as a formal operation in the selected source sentence.
 - the source and target share only punctuation, sentence length, or broad clause count but not the same rhetorical operation.

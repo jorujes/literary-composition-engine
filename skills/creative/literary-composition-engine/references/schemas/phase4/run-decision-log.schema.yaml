@@ -1,0 +1,58 @@
+schema:
+  artifact: "runs/<author>/<run_id>/run.decision.log.yaml"
+  purpose: >
+    Record the runtime provenance of Phase 4 artifacts so the run cannot be
+    passed off as a code-generated simulation. Mechanical tools may persist,
+    query, validate, copy approved artifacts, and assemble released paragraphs;
+    they must not make literary decisions.
+  required_top_level:
+    - "run_decision_log"
+  structure:
+    run_decision_log:
+      run_id: ""
+      author_id: ""
+      decision_policy:
+        agents_decide_python_persists: true
+        code_generated_literary_artifacts_are_blocking: true
+      artifact_authorship:
+        sentence_meaning_plan: "agent_direct"
+        sentence_anchor_matching: "agent_direct"
+        source_sentence_anchor_selection: "agent_direct"
+        paragraph_rewrite_plan: "agent_direct"
+        candidate_output: "agent_direct"
+        anchor_audits: "agent_direct"
+        final_paragraph: "agent_direct"
+        final_output: "agent_direct"
+      forbidden_generation_methods_checked:
+        python_or_shell_script_generated_final_text: false
+        python_or_shell_script_generated_source_anchor_selection: false
+        python_or_shell_script_generated_matching_reasons: false
+        python_or_shell_script_generated_semantic_exclusions: false
+        python_or_shell_script_generated_audit_judgments: false
+        python_or_shell_script_processed_unreleased_final_or_candidate_text: false
+        python_or_shell_script_counted_or_compared_unreleased_final_or_candidate_text: false
+        parent_or_driver_preselected_source_anchors: false
+        delegate_context_included_selected_source_anchors: false
+      mechanical_tools_used:
+        - tool_name: ""
+          command_or_script_path: ""
+          allowed_purpose: "sqlite_query | yaml_persist | validation | artifact_copy | story_assembly"
+          wrote_final_text: false
+          wrote_source_anchor_decisions: false
+          wrote_matching_reasons: false
+          wrote_semantic_exclusions: false
+          wrote_audit_judgments: false
+          processed_unreleased_final_or_candidate_text: false
+          notes: ""
+      blocking_events:
+        - event_id: ""
+          reason: ""
+          affected_artifacts:
+            - ""
+          action_taken: "restart_stage | block_run"
+  must_not:
+    - "Do not mark script-generated final prose as agent_direct."
+    - "Do not use Python or shell heredocs to hard-code source sentence ids, target sentences, matching reasons, semantic exclusions, or audit judgments."
+    - "Do not put unreleased target prose into Python or shell code for counting, punctuation checks, or comparison."
+    - "Do not pass selected or recommended source anchors from a parent/driver to the paragraph writer before sentence.plan.yaml exists."
+    - "Do not use this file to launder a simulated run; if code wrote literary content, the run is blocked."

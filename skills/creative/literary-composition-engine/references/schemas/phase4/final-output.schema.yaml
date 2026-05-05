@@ -9,7 +9,7 @@ schema_contract:
       run_id: ""
       author_id: ""
       title: ""
-      final_text: ""
+      final_text: "" # write with YAML literal block style (|-) to preserve paragraph breaks
       paragraph_refs:
         - "paragraphs/p001/final.paragraph.yaml"
       generation_basis:
@@ -29,4 +29,4 @@ schema_contract:
   must_not:
     - "Do not use only a legacy text field; final_text is required."
     - "Do not add unplanned closing paragraphs during assembly."
-
+    - "Do not write multi-paragraph final_text with folded block style (>); it collapses paragraph breaks."

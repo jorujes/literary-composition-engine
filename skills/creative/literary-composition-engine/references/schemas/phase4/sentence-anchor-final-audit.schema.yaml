@@ -19,14 +19,17 @@ schema_contract:
           target_rhetorical_operation: ""
           source_rhetorical_operation: ""
           operation_match: "exact | close | partial | no"
+          narrative_action_match: "exact | close | loose | mismatch"
+          entity_action_role_match: "exact | close | loose | mismatch"
+          why_action_match_is_not_loose_analogy: ""
           prewriting_form_match_status: "strong_form_match | acceptable_form_match | weak_form_match | failed_form_match | missing"
           formal_match_checks:
-            mood_match: "yes | acceptable_difference | no"
-            clause_sequence_match: "yes | acceptable_difference | no"
-            coordination_subordination_match: "yes | acceptable_difference | no"
-            turn_logic_match: "yes | acceptable_difference | no"
-            punctuation_function_match: "yes | acceptable_difference | no"
-            category_fit: "yes | acceptable_difference | no"
+            mood_match: "'yes' | acceptable_difference | 'no'"
+            clause_sequence_match: "'yes' | acceptable_difference | 'no'"
+            coordination_subordination_match: "'yes' | acceptable_difference | 'no'"
+            turn_logic_match: "'yes' | acceptable_difference | 'no'"
+            punctuation_function_match: "'yes' | acceptable_difference | 'no'"
+            category_fit: "'yes' | acceptable_difference | 'no'"
             acceptable_differences_from_matching:
               - ""
           initial_anchor_status: "strong_anchor | acceptable_anchor | weak_anchor | failed_anchor"
@@ -55,6 +58,16 @@ schema_contract:
       - "close"
       - "partial"
       - "no"
+    sentence_results.narrative_action_match:
+      - "exact"
+      - "close"
+      - "loose"
+      - "mismatch"
+    sentence_results.entity_action_role_match:
+      - "exact"
+      - "close"
+      - "loose"
+      - "mismatch"
     sentence_results.prewriting_form_match_status:
       - "strong_form_match"
       - "acceptable_form_match"
@@ -63,5 +76,7 @@ schema_contract:
       - "missing"
   must_not:
     - "Do not approve based only on punctuation, length, or broad clause count."
+    - "Do not approve if narrative_action_match or entity_action_role_match is loose or mismatch."
+    - "Do not approve action fit by broad analogy."
     - "Do not pass weak_anchor or failed_anchor into final.anchor.lock.yaml."
     - "Do not pass if formal_match_checks are missing or show unlicensed mismatches."

@@ -39,6 +39,41 @@ REQUIRED_PARAGRAPH_FILES = [
     "paragraph.release.yaml",
 ]
 
+PARAGRAPH_ARTIFACT_ORDER = [
+    "sentence.plan.yaml",
+    "sentence_anchor.matching.yaml",
+    "source_sentence_anchor.selection.yaml",
+    "paragraph.rewrite.plan.yaml",
+    "candidate.output.yaml",
+    "blind_anchor_adversarial_audit.yaml",
+    "anchor.cycle.summary.yaml",
+    "sentence_anchor.final_audit.yaml",
+    "final.anchor.lock.yaml",
+    "audit.report.yaml",
+    "final.paragraph.yaml",
+    "paragraph.release.yaml",
+]
+
+REQUIRED_PARAGRAPH_AUDIT_SECTIONS = [
+    "semantic_preservation",
+    "continuity_check",
+    "theme_application",
+    "style_application",
+    "symbolic_policy_check",
+    "anti_pastiche_check",
+    "slop_check",
+    "phase4_flags_check",
+    "sentence_plan_check",
+]
+
+REQUIRED_SENTENCE_PLAN_FIELDS = [
+    "sentence_id",
+    "semantic_payload",
+    "must_say",
+    "must_not_say",
+    "required_narrative_action",
+]
+
 OPTIONAL_PARAGRAPH_FILES = [
     "sentence_anchor.repair.plan.yaml",
     "repaired.candidate.output.yaml",
@@ -51,6 +86,7 @@ REQUIRED_STORY_FILES = [
     "final.text.repair.report.yaml",
     "final.repair.audit.yaml",
     "final.release.yaml",
+    "run.decision.log.yaml",
 ]
 
 OPTIONAL_STORY_FILES = [
@@ -120,6 +156,7 @@ STRICT_NOT_BUT_LICENSE_TERMS = [
 ]
 
 PASSING_FORM_MATCH_STATUSES = {"strong_form_match", "acceptable_form_match"}
+PASSING_ACTION_MATCH_VALUES = {"exact", "close"}
 
 FORMAL_MATCH_CHECK_KEYS = [
     "mood_match",
@@ -129,6 +166,44 @@ FORMAL_MATCH_CHECK_KEYS = [
     "punctuation_function_match",
     "category_fit",
 ]
+
+ACTION_MATCH_KEYS = [
+    "narrative_action_match",
+    "entity_action_role_match",
+]
+
+TARGET_ACTION_FORM_KEYS = [
+    "required_narrative_action_type",
+    "required_entity_action_roles",
+    "required_discourse_function",
+]
+
+SOURCE_ACTION_FORM_KEYS = [
+    "source_narrative_action_type",
+    "source_entity_action_roles",
+    "source_discourse_function",
+]
+
+GENERIC_ACTION_MATCH_MARKERS = {
+    "same broad action",
+    "same broad movement",
+    "same broad operation",
+    "broadly similar",
+    "broadly analogous",
+    "roughly analogous",
+    "analogous movement",
+    "analogous rhetorical movement",
+    "shares broad",
+    "similar enough",
+    "works by analogy",
+    "analogy between source and target",
+    "same general function",
+    "same general movement",
+    "fonte e alvo são análogos",
+    "movimento parecido",
+    "movimento semelhante",
+    "ação parecida",
+}
 
 GENERIC_SOURCE_SPAN_MARKERS = {
     "opening syntax",
@@ -146,6 +221,20 @@ GENERIC_SOURCE_SPAN_MARKERS = {
     "generic opening",
     "formal operation",
     "source words or span",
+}
+
+GENERIC_SEMANTIC_EXCLUSION_MARKERS = {
+    "source semantics",
+    "source semantic content",
+    "source content",
+    "source entities",
+    "source images",
+    "memorable phrasing",
+    "do not copy source content",
+    "do not copy source semantics",
+    "semântica da fonte",
+    "conteúdo da fonte",
+    "imagens da fonte",
 }
 
 DIALECT_MARKERS = [
@@ -304,8 +393,18 @@ def is_literal_source_span(span: Any, source_text: str, min_words: int) -> bool:
         return False
     if len(span_text.split()) < min_words:
         return False
+    if any(char.isdigit() for char in flatten_text(span)):
+        return True
     content_words = [word for word in span_text.split() if word not in STOPWORDS and len(word) > 2]
     return len(content_words) >= 1
+
+
+def formal_check_passes(value: Any) -> bool:
+    if value is True:
+        return True
+    if isinstance(value, str):
+        return value.casefold() in {"yes", "true", "acceptable_difference"}
+    return False
 
 
 def has_generic_marker(value: Any) -> bool:
@@ -403,6 +502,97 @@ def is_generic_source_span(value: Any) -> bool:
     return any(marker in normalized for marker in GENERIC_SOURCE_SPAN_MARKERS if len(marker) > 10)
 
 
+def is_generic_semantic_exclusion(value: Any) -> bool:
+    text = flatten_text(value).strip().casefold()
+    if not text:
+        return True
+    normalized = re.sub(r"[^a-zà-öø-ÿ0-9 ]+", " ", text)
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    if normalized in GENERIC_SEMANTIC_EXCLUSION_MARKERS:
+        return True
+    return any(marker in normalized for marker in GENERIC_SEMANTIC_EXCLUSION_MARKERS)
+
+
+def is_generic_action_match_reason(value: Any) -> bool:
+    text = flatten_text(value).strip().casefold()
+    if word_count(text) < 14:
+        return True
+    if has_generic_marker(text):
+        return True
+    normalized = re.sub(r"[^a-zà-öø-ÿ0-9 ]+", " ", text)
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return any(marker in normalized for marker in GENERIC_ACTION_MATCH_MARKERS)
+
+
+def semantic_exclusion_items(entry: dict[str, Any]) -> list[Any]:
+    keys = [
+        "source_semantic_content_to_exclude",
+        "semantic_cargo_to_exclude",
+        "source_semantic_cargo_to_exclude",
+        "semantic_content_not_to_copy",
+        "source_content_not_to_copy",
+        "must_not_copy_from_source_semantics",
+    ]
+    items: list[Any] = []
+    for key in keys:
+        value = entry.get(key)
+        if isinstance(value, list):
+            items.extend(value)
+        elif isinstance(value, (dict, str)):
+            items.append(value)
+    return items
+
+
+def source_part_semantic_exclusion_items(part: dict[str, Any]) -> list[Any]:
+    keys = [
+        "semantic_cargo_to_exclude",
+        "source_semantic_cargo_to_exclude",
+        "source_content_not_to_copy",
+        "must_not_copy_from_source_semantics",
+    ]
+    items: list[Any] = []
+    for key in keys:
+        value = part.get(key)
+        if isinstance(value, list):
+            items.extend(value)
+        elif isinstance(value, (dict, str)):
+            items.append(value)
+    return items
+
+
+def forbidden_target_calques(entry: dict[str, Any]) -> list[str]:
+    keys = [
+        "target_language_forbidden_calques",
+        "forbidden_target_calques",
+        "target_forbidden_calques",
+        "forbidden_target_phrases",
+        "target_language_must_not_contain",
+    ]
+    phrases: list[str] = []
+    for item in semantic_exclusion_items(entry):
+        if isinstance(item, str):
+            continue
+        if not isinstance(item, dict):
+            continue
+        for key in keys:
+            value = item.get(key)
+            if isinstance(value, str):
+                phrases.append(value)
+            elif isinstance(value, list):
+                phrases.extend(phrase for phrase in value if isinstance(phrase, str))
+    return [phrase for phrase in phrases if word_count(phrase) >= 2]
+
+
+def contains_phrase(text: str, phrase: str) -> bool:
+    text_words = normalized_word_text(text)
+    phrase_words = normalized_word_text(phrase)
+    return bool(text_words and phrase_words and phrase_words in text_words)
+
+
+def semicolon_count(text: str) -> int:
+    return text.count(";") if isinstance(text, str) else 0
+
+
 def longest_sequential_source_sentence_run(refs: list[Any]) -> int:
     longest = 0
     current = 0
@@ -476,6 +666,87 @@ def validate(args: argparse.Namespace) -> int:
                 except Exception as exc:  # noqa: BLE001
                     finding("yaml_parse_error", path, str(exc))
 
+        decision_log_path = run / "run.decision.log.yaml"
+        if decision_log_path.exists():
+            try:
+                decision_log = artifact_root(load_yaml(decision_log_path), "run_decision_log")
+            except Exception:  # parse errors are already reported above
+                decision_log = {}
+            artifact_authorship = decision_log.get("artifact_authorship") if isinstance(decision_log, dict) else {}
+            if not isinstance(artifact_authorship, dict):
+                finding(
+                    "run_decision_log_missing_artifact_authorship",
+                    decision_log_path,
+                    "run.decision.log.yaml must include artifact_authorship",
+                )
+                artifact_authorship = {}
+            required_agent_authored = [
+                "sentence_meaning_plan",
+                "sentence_anchor_matching",
+                "source_sentence_anchor_selection",
+                "paragraph_rewrite_plan",
+                "candidate_output",
+                "anchor_audits",
+                "final_paragraph",
+                "final_output",
+            ]
+            for key in required_agent_authored:
+                value = artifact_authorship.get(key)
+                if value != "agent_direct":
+                    finding(
+                        "literary_artifact_not_agent_direct",
+                        decision_log_path,
+                        f"artifact_authorship.{key} must be agent_direct; got {value!r}",
+                    )
+            forbidden_methods = decision_log.get("forbidden_generation_methods_checked") if isinstance(decision_log, dict) else {}
+            if not isinstance(forbidden_methods, dict):
+                finding(
+                    "run_decision_log_missing_forbidden_generation_methods",
+                    decision_log_path,
+                    "run.decision.log.yaml must include forbidden_generation_methods_checked",
+                )
+                forbidden_methods = {}
+            forbidden_flags = [
+                "python_or_shell_script_generated_final_text",
+                "python_or_shell_script_generated_source_anchor_selection",
+                "python_or_shell_script_generated_matching_reasons",
+                "python_or_shell_script_generated_semantic_exclusions",
+                "python_or_shell_script_generated_audit_judgments",
+                "python_or_shell_script_processed_unreleased_final_or_candidate_text",
+                "python_or_shell_script_counted_or_compared_unreleased_final_or_candidate_text",
+                "parent_or_driver_preselected_source_anchors",
+                "delegate_context_included_selected_source_anchors",
+            ]
+            for key in forbidden_flags:
+                if forbidden_methods.get(key) is not False:
+                    finding(
+                        "forbidden_code_generated_literary_decision",
+                        decision_log_path,
+                        f"forbidden_generation_methods_checked.{key} must be false",
+                    )
+            for index, item in enumerate(decision_log.get("mechanical_tools_used") or []):
+                if not isinstance(item, dict):
+                    finding(
+                        "bad_mechanical_tool_entry",
+                        decision_log_path,
+                        f"mechanical_tools_used[{index}] must be an object",
+                    )
+                    continue
+                for key in [
+                    "wrote_final_text",
+                    "wrote_source_anchor_decisions",
+                    "wrote_matching_reasons",
+                    "wrote_semantic_exclusions",
+                    "wrote_audit_judgments",
+                    "processed_unreleased_final_or_candidate_text",
+                ]:
+                    if item.get(key) is not False:
+                        finding(
+                            "mechanical_tool_wrote_literary_decision",
+                            decision_log_path,
+                            f"mechanical_tools_used[{index}].{key} must be false",
+                        )
+
     paragraph_count = args.paragraph_count
     released_count = 0
     sentence_mapping_count = 0
@@ -539,6 +810,40 @@ def validate(args: argparse.Namespace) -> int:
             except Exception as exc:  # noqa: BLE001
                 finding("yaml_parse_error", path, str(exc))
 
+        existing_ordered_files = [rel for rel in PARAGRAPH_ARTIFACT_ORDER if (pdir / rel).exists()]
+        for earlier, later in zip(existing_ordered_files, existing_ordered_files[1:]):
+            earlier_path = pdir / earlier
+            later_path = pdir / later
+            try:
+                if earlier_path.stat().st_mtime > later_path.stat().st_mtime:
+                    finding(
+                        "paragraph_artifact_order_violation",
+                        later_path,
+                        f"{pid}/{later} was written before {pid}/{earlier}; anchor selection/audit cannot be retrofitted after prose",
+                    )
+            except OSError:
+                pass
+        for producer, produced in [
+            ("sentence_anchor.matching.yaml", "candidate.output.yaml"),
+            ("source_sentence_anchor.selection.yaml", "candidate.output.yaml"),
+            ("blind_anchor_adversarial_audit.yaml", "sentence_anchor.final_audit.yaml"),
+            ("sentence_anchor.final_audit.yaml", "final.paragraph.yaml"),
+            ("final.anchor.lock.yaml", "final.paragraph.yaml"),
+            ("audit.report.yaml", "final.paragraph.yaml"),
+        ]:
+            producer_path = pdir / producer
+            produced_path = pdir / produced
+            if producer_path.exists() and produced_path.exists():
+                try:
+                    if producer_path.stat().st_mtime > produced_path.stat().st_mtime:
+                        finding(
+                            "paragraph_artifact_precondition_written_after_output",
+                            produced_path,
+                            f"{pid}/{produced} predates {pid}/{producer}; this indicates after-the-fact justification",
+                        )
+                except OSError:
+                    pass
+
         release = artifact_root(loaded.get("paragraph.release.yaml"), "paragraph_release")
         if release.get("release_status") != "released":
             finding(
@@ -558,6 +863,60 @@ def validate(args: argparse.Namespace) -> int:
             all_final_sentences.extend(split_sentences(final_text))
 
         neutral = artifact_root(loaded.get("neutral.paragraph.yaml"), "neutral_paragraph")
+
+        sentence_plan_root = artifact_root(loaded.get("sentence.plan.yaml"), "sentence_plan")
+        sentence_plan_items = sentence_plan_root.get("sentences") if isinstance(sentence_plan_root, dict) else None
+        if not isinstance(sentence_plan_items, list) or not sentence_plan_items:
+            finding(
+                "sentence_plan_missing_sentences",
+                pdir / "sentence.plan.yaml",
+                f"{pid} sentence.plan.yaml must include sentence_plan.sentences",
+            )
+        else:
+            for item in sentence_plan_items:
+                if not isinstance(item, dict):
+                    finding("sentence_plan_bad_sentence_item", pdir / "sentence.plan.yaml", f"{pid} has non-object sentence plan item")
+                    continue
+                sid = item.get("sentence_id", "?")
+                for field in REQUIRED_SENTENCE_PLAN_FIELDS:
+                    if missing_or_empty(item.get(field)):
+                        finding(
+                            "sentence_plan_missing_operational_field",
+                            pdir / "sentence.plan.yaml",
+                            f"{pid}/{sid} sentence plan must include {field}",
+                        )
+                must_say = item.get("must_say")
+                if not isinstance(must_say, list) or len([x for x in must_say if not missing_or_empty(x)]) < 2:
+                    finding(
+                        "sentence_plan_must_say_too_thin",
+                        pdir / "sentence.plan.yaml",
+                        f"{pid}/{sid} must_say must list at least two concrete semantic obligations",
+                    )
+                must_not_say = item.get("must_not_say")
+                if not isinstance(must_not_say, list) or not [x for x in must_not_say if not missing_or_empty(x)]:
+                    finding(
+                        "sentence_plan_must_not_say_missing",
+                        pdir / "sentence.plan.yaml",
+                        f"{pid}/{sid} must_not_say must list concrete exclusions before anchoring",
+                    )
+
+        paragraph_audit_root = artifact_root(loaded.get("audit.report.yaml"), "audit_report")
+        if paragraph_audit_root:
+            if paragraph_audit_root.get("overall_status") == "passed":
+                missing_sections = [key for key in REQUIRED_PARAGRAPH_AUDIT_SECTIONS if not isinstance(paragraph_audit_root.get(key), dict)]
+                if missing_sections:
+                    finding(
+                        "paragraph_audit_too_shallow",
+                        pdir / "audit.report.yaml",
+                        f"{pid} audit.report.yaml is marked passed but lacks detailed sections: {', '.join(missing_sections)}",
+                    )
+                if paragraph_audit_root.get("findings") == [] and paragraph_audit_root.get("release_allowed") is True and missing_sections:
+                    finding(
+                        "paragraph_audit_empty_pass",
+                        pdir / "audit.report.yaml",
+                        f"{pid} audit.report.yaml is an empty pass; paragraph release requires concrete checks, not a placeholder",
+                    )
+
         cycle_summary = loaded.get("anchor.cycle.summary.yaml") or {}
         if not isinstance(cycle_summary, dict) or "anchor_cycle_summary" not in cycle_summary:
             finding(
@@ -807,6 +1166,7 @@ def validate(args: argparse.Namespace) -> int:
                         "required_turn_logic",
                         "required_punctuation_function",
                         "required_category_of_movement",
+                        *TARGET_ACTION_FORM_KEYS,
                     ]
                     for key in required_form_keys:
                         if missing_or_empty(target_form.get(key)):
@@ -863,6 +1223,28 @@ def validate(args: argparse.Namespace) -> int:
                                 pdir / "sentence_anchor.matching.yaml",
                                 f"{pid}/{sentence_id or '?'} candidate lacks concrete source_form_analysis",
                             )
+                        elif any(missing_or_empty(form_analysis.get(key)) for key in SOURCE_ACTION_FORM_KEYS):
+                            finding(
+                                "sentence_anchor_matching_incomplete_source_action_form",
+                                pdir / "sentence_anchor.matching.yaml",
+                                f"{pid}/{sentence_id or '?'} candidate source_form_analysis must declare source narrative action, entity/action roles, and discourse function",
+                            )
+                        form_status = candidate.get("form_match_status")
+                        if form_status in PASSING_FORM_MATCH_STATUSES:
+                            for key in ACTION_MATCH_KEYS:
+                                if candidate.get(key) not in PASSING_ACTION_MATCH_VALUES:
+                                    finding(
+                                        "sentence_anchor_matching_candidate_action_match_not_releasable",
+                                        pdir / "sentence_anchor.matching.yaml",
+                                        f"{pid}/{sentence_id or '?'} passing candidate has {key}={candidate.get(key)!r}; expected exact or close",
+                                    )
+                            reason = candidate.get("why_action_match_is_not_loose_analogy")
+                            if missing_or_empty(reason) or is_generic_action_match_reason(reason):
+                                finding(
+                                    "sentence_anchor_matching_candidate_action_reason_generic",
+                                    pdir / "sentence_anchor.matching.yaml",
+                                    f"{pid}/{sentence_id or '?'} passing candidate must explain concrete action fit, not loose analogy",
+                                )
                 if missing_or_empty(item.get("why_selected_before_writing")):
                     finding(
                         "sentence_anchor_matching_missing_prewrite_reason",
@@ -884,6 +1266,20 @@ def validate(args: argparse.Namespace) -> int:
                             pdir / "sentence_anchor.matching.yaml",
                             f"{pid}/{sentence_id or '?'} why_selected_before_writing must cite a literal span from the selected source sentence",
                         )
+                for key in ACTION_MATCH_KEYS:
+                    if item.get(key) not in PASSING_ACTION_MATCH_VALUES:
+                        finding(
+                            "sentence_anchor_matching_selected_action_match_not_releasable",
+                            pdir / "sentence_anchor.matching.yaml",
+                            f"{pid}/{sentence_id or '?'} selected {key} is {item.get(key)!r}; expected exact or close",
+                        )
+                action_reason = item.get("why_action_match_is_not_loose_analogy")
+                if missing_or_empty(action_reason) or is_generic_action_match_reason(action_reason):
+                    finding(
+                        "sentence_anchor_matching_selected_action_reason_generic",
+                        pdir / "sentence_anchor.matching.yaml",
+                        f"{pid}/{sentence_id or '?'} selected source must justify concrete narrative/action fit, not loose analogy",
+                    )
         final_audit = loaded.get("sentence_anchor.final_audit.yaml") or {}
         final_audit_root = final_audit.get("sentence_anchor_final_audit") if isinstance(final_audit, dict) else {}
         if not isinstance(final_audit_root, dict):
@@ -920,6 +1316,20 @@ def validate(args: argparse.Namespace) -> int:
                         pdir / "sentence_anchor.final_audit.yaml",
                         f"{pid}/{sentence_id} operation_match is {result.get('operation_match')!r}; expected exact or close",
                     )
+                for key in ACTION_MATCH_KEYS:
+                    if result.get(key) not in PASSING_ACTION_MATCH_VALUES:
+                        finding(
+                            "sentence_anchor_final_action_match_not_releasable",
+                            pdir / "sentence_anchor.final_audit.yaml",
+                            f"{pid}/{sentence_id} {key} is {result.get(key)!r}; expected exact or close",
+                        )
+                action_reason = result.get("why_action_match_is_not_loose_analogy")
+                if missing_or_empty(action_reason) or is_generic_action_match_reason(action_reason):
+                    finding(
+                        "sentence_anchor_final_action_reason_generic",
+                        pdir / "sentence_anchor.final_audit.yaml",
+                        f"{pid}/{sentence_id} must justify concrete source/target action fit, not loose analogy",
+                    )
                 if not result.get("target_rhetorical_operation") or not result.get("source_rhetorical_operation"):
                     finding(
                         "sentence_anchor_missing_rhetorical_operation",
@@ -943,7 +1353,7 @@ def validate(args: argparse.Namespace) -> int:
                 else:
                     for key in FORMAL_MATCH_CHECK_KEYS:
                         value = checks.get(key)
-                        if value not in {"yes", "acceptable_difference"}:
+                        if not formal_check_passes(value):
                             finding(
                                 "sentence_anchor_formal_match_check_failed",
                                 pdir / "sentence_anchor.final_audit.yaml",
@@ -951,6 +1361,13 @@ def validate(args: argparse.Namespace) -> int:
                             )
                 if result.get("initial_anchor_status") in {"weak_anchor", "failed_anchor"}:
                     repair_required = True
+                semantic_copy = result.get("semantic_copy_check")
+                if not isinstance(semantic_copy, dict) or semantic_copy.get("finding") != "clean":
+                    finding(
+                        "sentence_anchor_semantic_copy_check_not_clean",
+                        pdir / "sentence_anchor.final_audit.yaml",
+                        f"{pid}/{sentence_id} semantic_copy_check must be present and clean",
+                    )
         if repair_required:
             final_anchor_repairs_required += 1
             if "sentence_anchor.repair.plan.yaml" not in loaded:
@@ -1017,6 +1434,20 @@ def validate(args: argparse.Namespace) -> int:
                         "locked_sentence_operation_match_not_releasable",
                         pdir / "final.anchor.lock.yaml",
                         f"{pid}/{sentence_id} locked operation_match is {lock.get('operation_match')!r}",
+                    )
+                for key in ACTION_MATCH_KEYS:
+                    if lock.get(key) not in PASSING_ACTION_MATCH_VALUES:
+                        finding(
+                            "locked_sentence_action_match_not_releasable",
+                            pdir / "final.anchor.lock.yaml",
+                            f"{pid}/{sentence_id} locked {key} is {lock.get(key)!r}",
+                        )
+                action_reason = lock.get("why_action_match_is_not_loose_analogy")
+                if missing_or_empty(action_reason) or is_generic_action_match_reason(action_reason):
+                    finding(
+                        "locked_sentence_action_reason_generic",
+                        pdir / "final.anchor.lock.yaml",
+                        f"{pid}/{sentence_id} lock must preserve concrete action-match justification",
                     )
                 if not lock.get("target_rhetorical_operation") or not lock.get("source_rhetorical_operation"):
                     finding(
@@ -1188,11 +1619,45 @@ def validate(args: argparse.Namespace) -> int:
                         pdir / "source_sentence_anchor.selection.yaml",
                         f"{pid}/{sentence_id or '?'} lacks target_form_requirements",
                     )
+                else:
+                    target_form = item.get("target_form_requirements")
+                    if isinstance(target_form, dict):
+                        for key in TARGET_ACTION_FORM_KEYS:
+                            if missing_or_empty(target_form.get(key)):
+                                finding(
+                                    "source_anchor_selection_incomplete_target_action_form",
+                                    pdir / "source_sentence_anchor.selection.yaml",
+                                    f"{pid}/{sentence_id or '?'} target_form_requirements.{key} is missing or empty",
+                                )
                 if missing_or_empty(item.get("selected_source_form_analysis")):
                     finding(
                         "source_anchor_selection_missing_source_form_analysis",
                         pdir / "source_sentence_anchor.selection.yaml",
                         f"{pid}/{sentence_id or '?'} lacks selected_source_form_analysis",
+                    )
+                else:
+                    source_form = item.get("selected_source_form_analysis")
+                    if isinstance(source_form, dict):
+                        for key in SOURCE_ACTION_FORM_KEYS:
+                            if missing_or_empty(source_form.get(key)):
+                                finding(
+                                    "source_anchor_selection_incomplete_source_action_form",
+                                    pdir / "source_sentence_anchor.selection.yaml",
+                                    f"{pid}/{sentence_id or '?'} selected_source_form_analysis.{key} is missing or empty",
+                                )
+                for key in ACTION_MATCH_KEYS:
+                    if item.get(key) not in PASSING_ACTION_MATCH_VALUES:
+                        finding(
+                            "source_anchor_selection_action_match_not_releasable",
+                            pdir / "source_sentence_anchor.selection.yaml",
+                            f"{pid}/{sentence_id or '?'} {key} is {item.get(key)!r}; expected exact or close",
+                        )
+                action_reason = item.get("why_action_match_is_not_loose_analogy")
+                if missing_or_empty(action_reason) or is_generic_action_match_reason(action_reason):
+                    finding(
+                        "source_anchor_selection_action_reason_generic",
+                        pdir / "source_sentence_anchor.selection.yaml",
+                        f"{pid}/{sentence_id or '?'} must explain concrete source/target narrative action fit, not loose analogy",
                     )
                 if not item.get("selected_source_sentence_text"):
                     finding(
@@ -1219,6 +1684,49 @@ def validate(args: argparse.Namespace) -> int:
                                 pdir / "source_sentence_anchor.selection.yaml",
                                 f"{pid}/{sentence_id or '?'} candidate lacks valid form_match_status",
                             )
+                        if isinstance(candidate, dict) and candidate.get("form_match_status") in PASSING_FORM_MATCH_STATUSES:
+                            for key in ACTION_MATCH_KEYS:
+                                if candidate.get(key) not in PASSING_ACTION_MATCH_VALUES:
+                                    finding(
+                                        "source_anchor_selection_candidate_action_match_not_releasable",
+                                        pdir / "source_sentence_anchor.selection.yaml",
+                                        f"{pid}/{sentence_id or '?'} passing candidate has {key}={candidate.get(key)!r}; expected exact or close",
+                                    )
+                exclusions = semantic_exclusion_items(item)
+                if not exclusions:
+                    finding(
+                        "source_anchor_selection_missing_semantic_exclusions",
+                        pdir / "source_sentence_anchor.selection.yaml",
+                        f"{pid}/{sentence_id or '?'} must list source semantic content/images/phrasing excluded from the target",
+                    )
+                else:
+                    has_source_phrase = False
+                    has_forbidden_calque = False
+                    for exclusion in exclusions:
+                        if is_generic_semantic_exclusion(exclusion):
+                            finding(
+                                "source_anchor_selection_generic_semantic_exclusion",
+                                pdir / "source_sentence_anchor.selection.yaml",
+                                f"{pid}/{sentence_id or '?'} has generic semantic exclusion: {flatten_text(exclusion)[:160]!r}",
+                            )
+                        if isinstance(exclusion, dict):
+                            source_phrase = exclusion.get("source_phrase") or exclusion.get("source_content") or exclusion.get("source_image_or_entity")
+                            if isinstance(source_phrase, str) and word_count(source_phrase) >= 2:
+                                has_source_phrase = True
+                            if forbidden_target_calques({"source_semantic_content_to_exclude": [exclusion]}):
+                                has_forbidden_calque = True
+                    if not has_source_phrase:
+                        finding(
+                            "source_anchor_selection_missing_excluded_source_phrase",
+                            pdir / "source_sentence_anchor.selection.yaml",
+                            f"{pid}/{sentence_id or '?'} semantic exclusions must name concrete source phrase/content to exclude",
+                        )
+                    if not has_forbidden_calque:
+                        finding(
+                            "source_anchor_selection_missing_forbidden_target_calques",
+                            pdir / "source_sentence_anchor.selection.yaml",
+                            f"{pid}/{sentence_id or '?'} semantic exclusions must include target-language forbidden calques",
+                        )
                 source_parts = item.get("source_sentence_parts")
                 if not isinstance(source_parts, list) or not source_parts:
                     finding(
@@ -1252,6 +1760,49 @@ def validate(args: argparse.Namespace) -> int:
                             )
                         else:
                             all_source_form_jobs.append(flatten_text(part.get("formal_job")))
+                        part_exclusions = source_part_semantic_exclusion_items(part)
+                        if not part_exclusions:
+                            finding(
+                                "source_anchor_selection_missing_part_semantic_cargo_exclusion",
+                                pdir / "source_sentence_anchor.selection.yaml",
+                                f"{pid}/{sentence_id or '?'} source part {span!r} must declare semantic_cargo_to_exclude with target-language forbidden calques",
+                            )
+                        else:
+                            has_part_source_phrase = False
+                            has_part_forbidden_calque = False
+                            for exclusion in part_exclusions:
+                                if is_generic_semantic_exclusion(exclusion):
+                                    finding(
+                                        "source_anchor_selection_generic_part_semantic_cargo_exclusion",
+                                        pdir / "source_sentence_anchor.selection.yaml",
+                                        f"{pid}/{sentence_id or '?'} source part {span!r} has generic semantic cargo exclusion: {flatten_text(exclusion)[:160]!r}",
+                                    )
+                                if isinstance(exclusion, dict):
+                                    source_phrase = exclusion.get("source_phrase") or exclusion.get("source_content") or exclusion.get("source_image_or_entity")
+                                    if isinstance(source_phrase, str) and word_count(source_phrase) >= 2:
+                                        has_part_source_phrase = True
+                                        span_words = normalized_word_text(flatten_text(span))
+                                        phrase_words = normalized_word_text(source_phrase)
+                                        if span_words and phrase_words and phrase_words not in span_words:
+                                            finding(
+                                                "source_anchor_selection_excluded_phrase_outside_part",
+                                                pdir / "source_sentence_anchor.selection.yaml",
+                                                f"{pid}/{sentence_id or '?'} excluded source_phrase {source_phrase!r} is not inside source part {span!r}",
+                                            )
+                                    if forbidden_target_calques({"semantic_cargo_to_exclude": [exclusion]}):
+                                        has_part_forbidden_calque = True
+                            if not has_part_source_phrase:
+                                finding(
+                                    "source_anchor_selection_missing_part_excluded_source_phrase",
+                                    pdir / "source_sentence_anchor.selection.yaml",
+                                    f"{pid}/{sentence_id or '?'} source part {span!r} must name the source semantic cargo being excluded",
+                                )
+                            if not has_part_forbidden_calque:
+                                finding(
+                                    "source_anchor_selection_missing_part_forbidden_target_calques",
+                                    pdir / "source_sentence_anchor.selection.yaml",
+                                    f"{pid}/{sentence_id or '?'} source part {span!r} must list target-language calques forbidden in the target sentence",
+                                )
 
         alignments = selection.get("source_to_target_alignment_plan") or selection_root.get("source_to_target_alignment_plan") or []
         if isinstance(alignments, list):
@@ -1344,6 +1895,31 @@ def validate(args: argparse.Namespace) -> int:
                                 pdir / "candidate.output.yaml",
                                 f"{pid}/{mapping.get('sentence_id', '?')} strong_form_match uses a question source for a non-question target",
                             )
+                        source_semicolons = semicolon_count(source_text)
+                        target_semicolons = semicolon_count(output_sentence)
+                        if target_semicolons > source_semicolons:
+                            finding(
+                                "source_anchor_unlicensed_semicolon",
+                                pdir / "candidate.output.yaml",
+                                f"{pid}/{mapping.get('sentence_id', '?')} target uses {target_semicolons} semicolon(s) but source uses {source_semicolons}; semicolons must come from the selected source sentence, not from generic model style",
+                            )
+                    for calque in forbidden_target_calques(selection_entry):
+                        if contains_phrase(output_sentence, calque):
+                            finding(
+                                "source_semantic_calque_copied",
+                                pdir / "candidate.output.yaml",
+                                f"{pid}/{mapping.get('sentence_id', '?')} target contains forbidden source-content calque: {calque!r}",
+                            )
+                    for part in selection_entry.get("source_sentence_parts") or []:
+                        if not isinstance(part, dict):
+                            continue
+                        for calque in forbidden_target_calques(part):
+                            if contains_phrase(output_sentence, calque):
+                                finding(
+                                    "source_part_semantic_calque_copied",
+                                    pdir / "candidate.output.yaml",
+                                    f"{pid}/{mapping.get('sentence_id', '?')} target contains forbidden source-part calque: {calque!r}",
+                                )
                 for regex, label in SURFACE_GPTISM_PATTERNS:
                     if output_sentence and regex.search(output_sentence):
                         if not has_source_license_for_surface_pattern(mapping, selection_entry):

@@ -97,6 +97,11 @@ Block shallow approvals. Do not approve because:
 - a boilerplate explanation says "opening, qualification, implication";
 - the source could be replaced by many unrelated corpus sentences.
 
+Also block target semicolons that are not licensed by the selected source
+sentence. If the source has no `;`, the target cannot introduce `;`. If the
+target has more `;` than the source, repair the target sentence or choose a
+source sentence whose punctuation machinery actually licenses that movement.
+
 Do not approve with reusable explanation templates. `why_status`,
 `source_rhetorical_operation`, and `target_rhetorical_operation` must be tied to
 literal words from the current source/target pair. A phrase like "same local
@@ -115,6 +120,18 @@ Also block concrete mismatches:
   standard analytic narration;
 - source and target are grossly disproportionate in length or semantic burden;
 - source and target share only a broad operation label.
+- target translates memorable source imagery, entities, or conclusions instead
+  of replacing them with independent story content. Good formal mimicry with
+  copied source cargo is still a failed anchor.
+- target translates semantic cargo from a source part used as formal machinery.
+  For example, if a formal span about one group being "enfeebled by a previous
+  war" becomes target content about receipts being weakened by water, the
+  sentence fails even if the syntax is close.
+- source and target do not share the same concrete narrative action type.
+  "Someone goes somewhere" is not enough: expedition logistics cannot anchor
+  ecclesiastical routine, and social illness/reception cannot anchor clerical
+  evidentiary status, unless the source sentence literally gives the same
+  entity/action roles needed by the target.
 
 These may pass only if `sentence_anchor.matching.yaml` already named the
 difference as acceptable and proves that most governing machinery survives.
@@ -136,14 +153,17 @@ sentence_anchor_final_audit:
       target_rhetorical_operation: ""
       source_rhetorical_operation: ""
       operation_match: "exact | close | partial | no"
+      narrative_action_match: "exact | close | loose | mismatch"
+      entity_action_role_match: "exact | close | loose | mismatch"
+      why_action_match_is_not_loose_analogy: ""
       prewriting_form_match_status: "strong_form_match | acceptable_form_match | weak_form_match | failed_form_match | missing"
       formal_match_checks:
-        mood_match: "yes | acceptable_difference | no"
-        clause_sequence_match: "yes | acceptable_difference | no"
-        coordination_subordination_match: "yes | acceptable_difference | no"
-        turn_logic_match: "yes | acceptable_difference | no"
-        punctuation_function_match: "yes | acceptable_difference | no"
-        category_fit: "yes | acceptable_difference | no"
+        mood_match: "'yes' | acceptable_difference | 'no'"
+        clause_sequence_match: "'yes' | acceptable_difference | 'no'"
+        coordination_subordination_match: "'yes' | acceptable_difference | 'no'"
+        turn_logic_match: "'yes' | acceptable_difference | 'no'"
+        punctuation_function_match: "'yes' | acceptable_difference | 'no'"
+        category_fit: "'yes' | acceptable_difference | 'no'"
         acceptable_differences_from_matching:
           - ""
       initial_anchor_status: "strong_anchor | acceptable_anchor | weak_anchor | failed_anchor"
@@ -153,7 +173,9 @@ sentence_anchor_final_audit:
 ```
 
 `overall_status` can be `passed` only if every `final_anchor_status` is
-`strong_anchor` or `acceptable_anchor`.
+`strong_anchor` or `acceptable_anchor`, every `operation_match` is `exact` or
+`close`, and both `narrative_action_match` and `entity_action_role_match` are
+`exact` or `close`.
 
 ## 3. Repair Weak Or Failed Anchors
 
@@ -239,6 +261,9 @@ final_anchor_lock:
       target_rhetorical_operation: ""
       source_rhetorical_operation: ""
       operation_match: "exact | close"
+      narrative_action_match: "exact | close"
+      entity_action_role_match: "exact | close"
+      why_action_match_is_not_loose_analogy: ""
       formal_match_status: "strong_form_match | acceptable_form_match"
 ```
 

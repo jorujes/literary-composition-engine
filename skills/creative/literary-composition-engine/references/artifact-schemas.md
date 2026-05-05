@@ -13,6 +13,15 @@ schema from `references/schemas/`. Schema files define required structure,
 allowed status values, and explicit `must_not` constraints. They are not scoring
 rubrics and must not be expanded with arbitrary numeric style controls.
 
+All generated YAML artifacts must parse cleanly on first write. Use block
+style for text-rich mappings and avoid inline `{...}` records for source
+sentences, long reasons, audit findings, or alignment maps. Any free-form field
+containing `:`, quotes, apostrophes, semicolons, brackets, source/target
+sentences, or long explanations should use a block scalar. Use `>-` for
+single-paragraph prose and `|-` when line breaks must survive parsing. In
+particular, `final_text` and `assembled_text` must use `|-`, because folded YAML
+style (`>`) collapses paragraph breaks and invalidates paragraph-count gates.
+
 ## Workspace Layout
 
 ```text
@@ -177,6 +186,7 @@ references/schemas/phase4/outline-candidates.schema.yaml
 references/schemas/phase4/story-blueprint.schema.yaml
 references/schemas/phase4/paragraph-plan.schema.yaml
 references/schemas/phase4/anchor-cycle-summary.schema.yaml
+references/schemas/phase4/sentence-plan.schema.yaml
 references/schemas/phase4/sentence-anchor-matching.schema.yaml
 references/schemas/phase4/source-sentence-anchor-selection.schema.yaml
 references/schemas/phase4/candidate-output.schema.yaml
@@ -184,8 +194,23 @@ references/schemas/phase4/blind-anchor-adversarial-audit.schema.yaml
 references/schemas/phase4/sentence-anchor-final-audit.schema.yaml
 references/schemas/phase4/final-output.schema.yaml
 references/schemas/phase4/final-release.schema.yaml
+references/schemas/phase4/run-decision-log.schema.yaml
 references/schemas/phase45/final-text-repair.schema.yaml
 ```
 
 Every final sentence must have a real source sentence anchor. Legacy
 `sentence_pattern` artifacts are release blockers.
+
+Paragraph root artifacts must be created in stage order. In particular,
+`candidate.output.yaml` must not predate `sentence_anchor.matching.yaml` or
+`source_sentence_anchor.selection.yaml`, and `final.paragraph.yaml` must not
+predate the blind audit, final anchor audit, final anchor lock, or paragraph
+audit. `anchor.cycle.summary.yaml` must not predate the blind audit it claims
+to summarize. The validator treats reversed modification times as
+after-the-fact justification.
+
+`run.decision.log.yaml` is required because Phase 4 must not be simulated by a
+generated script. It records mechanical tools used during the run and blocks
+release if Python, shell, or generated scripts wrote final prose, source-anchor
+decisions, matching reasons, semantic cargo exclusions, or audit judgments, or
+processed unreleased final/candidate prose for counts or comparisons.

@@ -26,6 +26,12 @@ schema_contract:
             required_enumeration_or_contrast: ""
             required_punctuation_function: ""
             required_category_of_movement: ""
+            required_narrative_action_type: ""
+            required_entity_action_roles:
+              - ""
+            required_discourse_function: ""
+            forbidden_action_mismatches:
+              - ""
           incompatible_source_forms:
             - ""
           candidate_source_sentences:
@@ -45,12 +51,22 @@ schema_contract:
                 turn_logic: ""
                 punctuation_function: ""
                 category_of_movement: ""
+                source_narrative_action_type: ""
+                source_entity_action_roles:
+                  - ""
+                source_discourse_function: ""
+              narrative_action_match: "exact | close | loose | mismatch"
+              entity_action_role_match: "exact | close | loose | mismatch"
+              why_action_match_is_not_loose_analogy: ""
               form_match_status: "strong_form_match | acceptable_form_match | weak_form_match | failed_form_match"
               fit_reason_before_writing: ""
               mismatch_reason: ""
           selected_source_sentence_ref: {}
           selected_source_sentence_text: ""
           selected_form_match_status: "strong_form_match | acceptable_form_match"
+          narrative_action_match: "exact | close"
+          entity_action_role_match: "exact | close"
+          why_action_match_is_not_loose_analogy: ""
           acceptable_differences:
             - ""
           why_selected_before_writing: ""
@@ -63,6 +79,16 @@ schema_contract:
       - "acceptable_form_match"
       - "weak_form_match"
       - "failed_form_match"
+    narrative_action_match:
+      - "exact"
+      - "close"
+      - "loose"
+      - "mismatch"
+    entity_action_role_match:
+      - "exact"
+      - "close"
+      - "loose"
+      - "mismatch"
   must_not:
     - "Do not choose a source sentence before defining target form requirements."
     - "Do not consider fewer than five candidate source sentences when corpus size permits."
@@ -71,8 +97,11 @@ schema_contract:
     - "Do not treat question-to-declaration, event-to-inventory, or list-to-event mismatches as acceptable without explicit narrow justification."
     - "Do not mark dialect-heavy, fragmentary, or quoted speech as strong_form_match for standard analytic narration unless the target has the same discourse mode."
     - "Do not mark strong_form_match when source and target length or semantic burden are plainly out of proportion."
+    - "Do not mark strong_form_match or acceptable_form_match when narrative_action_match or entity_action_role_match is loose or mismatch."
+    - "Do not justify action fit with broad analogy such as both involve movement, both involve a named person, or both are administrative."
     - "Do not use boilerplate reasons such as same local machine, controlled expansion, literal pressure, or narrowed implication."
   must:
     - "why_selected_before_writing cites a literal span from selected_source_sentence_text."
+    - "why_action_match_is_not_loose_analogy cites exact source and target action roles."
     - "strong_form_match is reserved for close mood, clause order, turn logic, movement category, register, and proportional sentence length."
     - "acceptable_form_match names the exact local difference and why the source remains necessary despite it."

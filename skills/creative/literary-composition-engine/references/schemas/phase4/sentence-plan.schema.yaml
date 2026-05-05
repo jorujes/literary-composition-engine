@@ -1,0 +1,37 @@
+schema_contract:
+  artifact: "runs/<author>/<run_id>/paragraphs/<pid>/sentence.plan.yaml"
+  phase: "phase_4_writing_runtime"
+  purpose: >
+    Define sentence-level semantic obligations before any source sentence is
+    selected or target prose is written. This is the bridge between paragraph
+    planning and source-sentence matching.
+  required_top_level:
+    - "sentence_plan"
+  schema:
+    sentence_plan:
+      run_id: ""
+      paragraph_id: ""
+      written_before_anchor_matching: true
+      written_before_candidate_output: true
+      sentences:
+        - sentence_id: ""
+          semantic_payload: ""
+          must_say:
+            - ""
+          must_not_say:
+            - ""
+          required_narrative_action: ""
+          required_discourse_function: ""
+          source_anchor_search_hints:
+            - ""
+          banned_premature_outputs:
+            - ""
+  must:
+    - "Each sentence must have concrete semantic obligations before anchor search."
+    - "must_say must contain at least two concrete obligations."
+    - "must_not_say must name exclusions that prevent semantic drift, premature revelation, source-cargo leakage, or wrong agency."
+    - "The plan must not contain final prose."
+  must_not:
+    - "Do not use vague labels such as arrival, observation, revelation, or closing as the whole plan."
+    - "Do not write target sentences here."
+    - "Do not choose source sentence ids here."

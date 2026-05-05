@@ -36,6 +36,22 @@ Core rule:
 agents decide; Python persists
 ```
 
+This rule is a release gate, not a slogan. Do not use Python, shell heredocs,
+or generated scripts to create or hard-code any literary decision artifact:
+`sentence_meaning_plan.yaml`, `sentence_anchor.matching.yaml`,
+`source_sentence_anchor.selection.yaml`, `paragraph.rewrite.plan.yaml`,
+`candidate.output.yaml`, anchor audits, `final.paragraph.yaml`, or
+`final.output.yaml`. Scripts may query SQLite, normalize mechanical data,
+copy already approved artifacts, assemble already released paragraphs, and run
+validators. If a script writes final prose, source sentence choices, matching
+reasons, semantic exclusions, or audit judgments, the run must be marked
+blocked and restarted.
+
+This also forbids putting unreleased target prose inside a Python or shell
+snippet "just to count words" or "just to compare lengths". Count source
+sentences with tools if needed; count target prose only after it exists in an
+agent-authored YAML artifact at the correct stage.
+
 ## When to Use
 
 Use this skill when the user wants to:
@@ -90,6 +106,17 @@ provides a place for the information. Do not add arbitrary numeric style scores,
 similarity scores, strength values, or confidence values. Mechanical corpus
 statistics are allowed only when a schema explicitly asks for them.
 
+Generated YAML must be valid YAML on the first write. Use block style, not flow
+style, for text-rich objects. Any free-form sentence, explanation, source quote,
+target sentence, reason, warning, or field containing `:`, quotes, apostrophes,
+semicolons, brackets, or comma-heavy prose must be written with a block scalar
+(`>-` for single-paragraph text, `|-` for text whose line breaks/paragraph breaks
+must be preserved). Do not put source sentences or long reasons inside inline
+maps such as `{...}`. `final_text` and `assembled_text` must use literal block
+style (`|-`) so paragraph breaks survive YAML parsing. Values like `yes`/`no`
+inside `formal_match_checks` must be quoted strings or true booleans; never rely
+on YAML's implicit coercion accidentally.
+
 Phase 4 release requires paragraph-local cycles. For each paragraph, generate,
 audit, and repair one paragraph at a time until `blind_anchor_adversarial_audit.yaml`
 passes. A failed sentence must be repaired by rewriting the target sentence or
@@ -98,6 +125,9 @@ cycle may be copied to the paragraph root and released.
 Anchor approval must be literal and adversarial: source-selection reasons and
 blind audit reasons cite exact source/target spans, and repeated boilerplate
 such as "same local machine" or "controlled expansion" is a release blocker.
+The target may inherit source sentence form, never source semantic cargo:
+memorable images, entities, conclusions, and target-language calques from the
+source sentence must be listed and blocked before writing.
 
 ## Phase 1 Workflow
 
@@ -443,6 +473,7 @@ source_sentence_anchor.selection.yaml
 paragraph.rewrite.plan.yaml
 candidate.output.yaml
 blind_anchor_adversarial_audit.yaml
+anchor.cycle.summary.yaml
 sentence_anchor.final_audit.yaml
 sentence_anchor.repair.plan.yaml, if needed
 repaired.candidate.output.yaml, if needed
@@ -452,6 +483,35 @@ repair.plan.yaml, if needed
 final.paragraph.yaml
 paragraph.release.yaml
 ```
+
+These files are not just a checklist. They must be written in order. A
+paragraph is invalid if `candidate.output.yaml` or `final.paragraph.yaml` is
+created before `sentence_anchor.matching.yaml`,
+`source_sentence_anchor.selection.yaml`, the blind audit, the final anchor
+audit, and `final.anchor.lock.yaml` have done their work. Never create a
+cycle summary that says the cycle passed before matching, selection, candidate,
+and blind audit exist. Never create a
+placeholder `audit.report.yaml` with `overall_status: passed` and
+`findings: []`; a passed paragraph audit must contain concrete checks for
+semantic preservation, continuity, theme, style, symbolic policy,
+anti-pastiche, slop, Phase 4 flags, and sentence-plan execution.
+
+`sentence.plan.yaml` must be operational, not a short label. For each sentence
+include:
+
+```yaml
+sentence_id: ""
+semantic_payload: ""
+must_say:
+  - ""
+must_not_say:
+  - ""
+required_narrative_action: ""
+```
+
+`must_say` names the concrete semantic obligations the target sentence must
+carry. `must_not_say` blocks premature revelations, wrong agents, copied source
+cargo, and source-language calques before anchor selection.
 
 `neutral.paragraph.yaml` must be genuine neutral prose. It is invalid to wrap
 the final prose in labels such as `Neutral p003 sentence 2:` or other metadata just
@@ -473,6 +533,14 @@ final.release.yaml
 run.decision.log.yaml
 ```
 
+`run.decision.log.yaml` is mandatory. It must explicitly record which tools or
+scripts wrote artifacts and must state that no Python/shell/generated script
+wrote final prose, source-anchor decisions, matching reasons, semantic
+exclusions, or literary audit judgments. It must also state that no mechanical
+tool processed, counted, or compared unreleased final/candidate prose, and that
+no parent/driver preselected source anchors or passed selected/recommended
+source anchors to a delegated writer before `sentence.plan.yaml` existed.
+
 `final.output.yaml` must include both `final_text` and paragraph refs. Keeping a legacy `text` alias is allowed, but `final_text` is required for downstream tooling.
 
 ### Source Sentence Anchor Selection
@@ -491,11 +559,30 @@ formal match. `acceptable_form_match` means the selected source preserves most
 governing sentence machinery and declares narrow differences; it never means
 "same vibe", "same broad operation", or "can be explained after the fact".
 
+If the agent already has a target sentence in mind, stop and return to the
+meaning plan. Target prose comes after matching and source selection. The
+required effort is to fit planned meaning into a selected source sentence, not
+to write a sentence and search for a defense.
+
+Do not preselect or recommend source sentence anchors outside the paragraph
+artifact sequence. Before `sentence.plan.yaml` exists on disk for a paragraph,
+an agent may inspect corpus availability or broad corpus statistics, but it may
+not choose source sentence ids for that paragraph. If using `delegate_task`, do
+not pass selected or "recommended" source anchors in the delegated context. The
+worker must write `sentence.plan.yaml`, then perform matching and selection
+inside the paragraph run directory, preserving the file order. Parent-provided
+anchor ids, prefiltered selected-anchor lists, or "use these anchors" context
+make the run unreleasable, even if target prose is written later.
+
 For each target sentence, matching must record:
 
 - required target form: mood, clause sequence, coordination/subordination,
   expected turn logic, enumeration/contrast/negation needs, and punctuation
   function if any;
+- required concrete action form: narrative action type, entity/action roles,
+  and discourse function. This is where the plan says whether the sentence is
+  an inventory, a physical movement, an evidentiary record, a hypothesis
+  failure, an observation, a warning, etc.;
 - incompatible source forms, such as question vs declaration, list vs event,
   event vs inventory, temporal turn vs administrative assignment;
 - several candidate source sentences with explicit `form_match_status` values:
@@ -508,6 +595,13 @@ Block when a source is selected first and justified later. Block when the
 selected source is a question but the target is a declaration, a bodily event
 but the target is an inventory, or any similar mood/turn/category mismatch,
 unless the artifact explicitly proves the same governing machinery survives.
+Also block loose action analogy: expedition logistics cannot anchor
+ecclesiastical routine merely because both involve movement, and a source about
+illness, hospitality, or social reaction cannot anchor a clerical evidentiary
+statement merely because both can mention a named person. The selected source
+must share the target's concrete narrative action type and comparable
+entity/action roles, recorded as `narrative_action_match: exact | close` and
+`entity_action_role_match: exact | close`.
 
 The alignment agent, writer, and independent auditor may read the source sentence
 text. The writer must imitate the actual sentence architecture while replacing
@@ -526,11 +620,21 @@ syntax"`, `source_words_or_span: "clause skeleton"`, or `formal_job:
 "qualification"`. Cite literal spans from the source sentence and name their
 local job, for example: `source_words_or_span: "As I began my request"`,
 `formal_job: "temporal subordinate opener that precedes a visible reaction"`.
+Every literal span must also declare `semantic_cargo_to_exclude` with
+target-language forbidden calques. The target may inherit the span's syntactic
+or rhetorical pressure, but not its semantic cargo. If "enfeebled by a previous
+war" becomes "enfraquecidos por água", the anchor failed even if the clause
+shape looks right.
 
 Do not let generic GPT rhetoric pass as source fidelity. A surface formula such
 as `not with X, but with Y` is blocked unless the chosen source sentence has an
 equivalent contrastive/corrective operation and the alignment cites that
 operation explicitly.
+
+Do not let GPT add semicolons as generic literary seasoning. A target sentence
+may use `;` only when the selected source sentence also uses `;`, and it may not
+use more semicolons than the source. This is not a style ban; it is a source
+fidelity rule.
 
 ### Sentence Anchor Final Repair Pass
 
@@ -561,6 +665,9 @@ source/target mood, clause order, coordination/subordination, governing turn
 logic, punctuation function, and category fit. A target can pass with small
 differences only when those differences are listed as acceptable in
 `sentence_anchor.matching.yaml` before generation.
+The final audit and lock must also preserve `narrative_action_match`,
+`entity_action_role_match`, and `why_action_match_is_not_loose_analogy`. `loose`
+or `mismatch` blocks release; a boilerplate explanation blocks release.
 
 ### Phase 4.5 Final Text Repair Gate
 
@@ -651,7 +758,10 @@ Audit must block release if:
 - `source_sentence_fidelity`, `target_semantic_independence`, or source-selection reasons are boilerplate repeated across many sentences;
 - source sentence selection happened after target sentence generation;
 - the selected source sentence is not necessary for that sentence's local function;
+- the selected source shares only broad analogy rather than concrete narrative
+  action type and comparable entity/action roles;
 - the candidate copies source-sentence content, imagery, conclusion, objects, entities, scene, or memorable phrasing;
+- the candidate copies semantic cargo from a source part used as formal machinery;
 - the candidate fails to match the selected source sentence's formal machine;
 - the candidate uses a generic rhetorical template not licensed by the selected source sentence;
 - punctuation is used as a shallow proxy for fidelity;

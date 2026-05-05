@@ -23,6 +23,10 @@ schema_contract:
             required_turn_logic: ""
             required_punctuation_function: ""
             required_category_of_movement: ""
+            required_narrative_action_type: ""
+            required_entity_action_roles:
+              - ""
+            required_discourse_function: ""
           selected_source_form_analysis:
             mood: ""
             clause_sequence:
@@ -32,6 +36,13 @@ schema_contract:
             turn_logic: ""
             punctuation_function: ""
             category_of_movement: ""
+            source_narrative_action_type: ""
+            source_entity_action_roles:
+              - ""
+            source_discourse_function: ""
+          narrative_action_match: "exact | close"
+          entity_action_role_match: "exact | close"
+          why_action_match_is_not_loose_analogy: ""
           acceptable_differences_from_source_form:
             - ""
           selected_source_sentence_ref:
@@ -46,12 +57,24 @@ schema_contract:
               source_sentence_text: ""
               useful_formal_features_in_this_exact_sentence:
                 - ""
+              narrative_action_match: "exact | close | loose | mismatch"
+              entity_action_role_match: "exact | close | loose | mismatch"
               form_match_status: "strong_form_match | acceptable_form_match | weak_form_match | failed_form_match"
               rejection_reason: ""
           source_sentence_parts:
             - part_id: "src_001"
               source_words_or_span: "" # literal source words, not a generic label
               formal_job: ""
+              semantic_cargo_to_exclude:
+                - source_phrase: ""
+                  why_excluded: "Semantic content in this exact source span, not formal machinery."
+                  target_language_forbidden_calques:
+                    - ""
+          source_semantic_content_to_exclude:
+            - source_phrase: ""
+              why_excluded: "Semantic content/image/entity from the source, not formal machinery."
+              target_language_forbidden_calques:
+                - ""
           target_payload_slots:
             - slot_id: "tgt_001"
               planned_content: ""
@@ -68,11 +91,14 @@ schema_contract:
             source_formal_job: ""
             target_planned_content: ""
             target_formal_job: ""
+            source_semantic_cargo_not_to_copy:
+              - ""
         must_preserve_from_source_form:
           - ""
         must_not_copy_from_source_semantics:
           - ""
   must_not:
+    - "Do not use inline flow maps for candidate source sentences, source parts, or alignment plans; long text fields must be block-style YAML."
     - "Do not use sentence_pattern ids, skeletons, or extracted pattern descriptions."
     - "Do not record fewer than five candidate source sentences considered when corpus size permits."
     - "Do not choose source sentences sequentially without local necessity."
@@ -81,8 +107,15 @@ schema_contract:
     - "Do not use generic source spans such as opening syntax, main clause, qualification, or development without literal source words."
     - "Do not use boilerplate reasons such as same local machine, controlled expansion, literal pressure, or narrowed implication without exact source words."
     - "Do not mark a source strong when dialect/register, question/declaration force, object/action category, or sentence length is plainly mismatched."
+    - "Do not mark a source strong or acceptable if narrative_action_match or entity_action_role_match is loose or mismatch."
+    - "Do not use broad analogy such as both involve movement, both involve a named person, or both are administrative as the reason for selecting a source."
+    - "Do not translate memorable source images, entities, objects, scenes, or conclusions into the target."
+    - "Do not translate semantic cargo from source_sentence_parts into target payload unless independently required by the target plan."
   must:
     - "why_this_exact_sentence_is_necessary cites a literal span from selected_source_sentence_text."
+    - "why_action_match_is_not_loose_analogy cites concrete source and target action roles."
     - "Every source_sentence_parts.source_words_or_span is a contiguous literal span from selected_source_sentence_text."
+    - "Every source_sentence_parts item names semantic_cargo_to_exclude and target-language forbidden calques for that exact span."
     - "source_to_target_part_map.source_words_or_span is a contiguous literal span from source_sentence_text."
+    - "source_semantic_content_to_exclude names concrete source phrases/content to exclude and target-language calques that must not appear."
     - "If the same target could be justified by many unrelated source sentences, selected_form_match_status must be weak_form_match or failed_form_match and the sentence must be replanned."

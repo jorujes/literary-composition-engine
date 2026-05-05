@@ -73,6 +73,19 @@ the run is invalid and must regenerate the neutral draft.
 
 If mechanical validation fails, repair artifacts and rerun it before returning.
 
+YAML serialization is a release precondition, not a cleanup task. Before writing
+any YAML artifact, prefer block mappings over inline/flow mappings for
+text-rich records. Write all full sentences, source quotations, target
+sentences, explanations, semantic payloads, `why_*` fields, `reason_*` fields,
+and fields containing `:`, quotes, apostrophes, semicolons, brackets, or
+comma-heavy prose as block scalars. Use `>-` for single-paragraph prose and
+`|-` for text where line breaks or paragraph breaks must be preserved.
+`final_text` and `assembled_text` must use `|-`, not `>`, so the validator can
+count paragraphs after parsing. Do not use inline maps for candidate source
+sentences, source sentence parts, final audit results, or alignment plans. If a
+field is conceptually `"yes"` or `"no"`, quote it, or use `true`/`false` only
+where the schema explicitly expects a boolean.
+
 Paragraph-local anchor cycle rule:
 
 Do not release a paragraph after a single generator self-check. Each paragraph
@@ -227,6 +240,32 @@ length_release_gates:
 
 Source-anchor matching and selection rule:
 
+Artifact authorship rule:
+
+Agents must make and write literary decisions directly. Python, shell heredocs,
+and generated scripts must not create or hard-code final prose, source sentence
+choices, source/target matching reasons, semantic cargo exclusions,
+candidate outputs, final paragraphs, or anchor audit judgments. Mechanical
+tools may query SQLite, count, validate, copy approved cycle artifacts, and
+assemble already released paragraphs. If any script writes literary decision
+content, stop the run, set release to blocked, and restart from the affected
+stage.
+
+Do not put unreleased target prose inside Python or shell code to count words,
+compare length, or check punctuation. If target prose is not yet in a
+stage-correct YAML artifact, mechanical tools must not see it.
+
+Write `run.decision.log.yaml` at the run root before final release. It must
+record every mechanical tool/script used and explicitly declare that final
+prose, anchor selection, matching, semantic exclusions, and audits were created
+by agent reasoning, not code generation.
+It must also declare:
+
+```yaml
+parent_or_driver_preselected_source_anchors: false
+delegate_context_included_selected_source_anchors: false
+```
+
 Do not assign source anchors sequentially from one story. For every planned
 sentence, retrieve multiple candidate source sentences from `sentences_fts` or
 direct corpus browsing whose actual sentence form can carry that sentence's
@@ -234,10 +273,59 @@ semantic payload, then choose one and record rejected candidates. The selected
 source must be necessary enough that replacing it with many unrelated source
 sentences would weaken the justification.
 
+Do not preselect or recommend source anchors before the paragraph's
+`sentence.plan.yaml` exists on disk. Do not make a parent planning pass that
+hands a worker a list of selected source sentence ids. If you use `delegate_task`,
+the delegated agent must receive only the run constraints, corpus path,
+validated author pack path, and story/paragraph duties; it must create
+`sentence.plan.yaml` first and then select anchors inside the paragraph artifact
+sequence. Passing "selected anchors recommended" or "use these source ids" to a
+worker is after-the-fact laundering and blocks the run.
+
 Before writing `source_sentence_anchor.selection.yaml`, write
 `sentence_anchor.matching.yaml`. This file must be created before any final
 target sentence exists. It prevents the model from choosing a random source
 sentence and retrojustifying it after generation.
+
+Stage order is a mechanical release gate. For each paragraph, write artifacts
+in this order:
+
+```text
+sentence.plan.yaml
+sentence_anchor.matching.yaml
+source_sentence_anchor.selection.yaml
+paragraph.rewrite.plan.yaml
+candidate.output.yaml
+blind_anchor_adversarial_audit.yaml
+anchor.cycle.summary.yaml
+sentence_anchor.final_audit.yaml
+final.anchor.lock.yaml
+audit.report.yaml
+final.paragraph.yaml
+paragraph.release.yaml
+```
+
+Do not batch-write these in parallel. A paragraph fails if `candidate.output`
+or `final.paragraph` predates matching, selection, audit, or lock artifacts.
+It also fails if `anchor.cycle.summary.yaml` says a cycle passed before the
+matching, selection, candidate, and blind audit files exist.
+
+`sentence.plan.yaml` must be operational. Every sentence item must include:
+
+```yaml
+sentence_id: ""
+semantic_payload: ""
+must_say:
+  - ""
+must_not_say:
+  - ""
+required_narrative_action: ""
+```
+
+`audit.report.yaml` may not be an empty pass. If it says `overall_status:
+passed`, it must include concrete sections for semantic preservation,
+continuity, theme, style, symbolic policy, anti-pastiche, slop, Phase 4 flags,
+and sentence-plan execution.
 
 For every planned target sentence, first define formal requirements from the
 semantic payload. Then retrieve and record at least five candidate source
@@ -262,6 +350,14 @@ sentence_anchor_matching:
         required_turn_logic: ""
         required_enumeration_or_contrast: ""
         required_punctuation_function: ""
+        required_category_of_movement: ""
+        required_narrative_action_type: ""
+        required_entity_action_roles:
+          - "who/what acts, observes, records, resists, lists, discovers, receives, etc."
+        required_discourse_function: ""
+        forbidden_action_mismatches:
+          - "expedition logistics when target requires ecclesiastical routine"
+          - "social illness/reception when target requires clerical evidentiary status"
       incompatible_source_forms:
         - "yes/no question when target must be factual declaration"
         - "bodily crisis event when target must be inventory or assignment"
@@ -277,12 +373,23 @@ sentence_anchor_matching:
               - ""
             turn_logic: ""
             punctuation_function: ""
+            category_of_movement: ""
+            source_narrative_action_type: ""
+            source_entity_action_roles:
+              - ""
+            source_discourse_function: ""
+          narrative_action_match: "exact | close | loose | mismatch"
+          entity_action_role_match: "exact | close | loose | mismatch"
+          why_action_match_is_not_loose_analogy: ""
           form_match_status: "strong_form_match | acceptable_form_match | weak_form_match | failed_form_match"
           fit_reason_before_writing: ""
           mismatch_reason: ""
       selected_source_sentence_ref: {}
       selected_source_sentence_text: ""
       selected_form_match_status: "strong_form_match | acceptable_form_match"
+      narrative_action_match: "exact | close"
+      entity_action_role_match: "exact | close"
+      why_action_match_is_not_loose_analogy: ""
       acceptable_differences:
         - ""
       why_selected_before_writing: ""
@@ -293,6 +400,21 @@ must preserve most governing machinery: mood or equivalent force, clause order,
 coordination/subordination, turn logic, category of movement, and punctuation
 function where relevant. A merely broad label such as `causal qualification` or
 `evidentiary inventory` is not enough.
+
+Action fit is mandatory, not decorative. Before search, name the concrete
+target action: e.g. "a narrator records an evidentiary document", "a clerk
+physically leads another man into a chapel", "objects are inventoried as proof",
+"a hypothesis fails to explain a physical anomaly". A source can pass only if
+its literal sentence performs the same or very close action with comparable
+entity roles. Do not anchor ecclesiastical routine to expedition logistics just
+because both have "after X, someone goes somewhere"; do not anchor an arbitrary
+clerical filler to a source about illness, hospitality, or social reaction just
+because both can contain a named person.
+
+Semicolons are source-bound. Do not add `;` to a target sentence unless the
+selected source sentence also has `;`; never use more semicolons than the
+source. If the source has no semicolon, a target semicolon is generic model
+style and fails source fidelity.
 
 `strong_form_match` is narrow. Do not mark an anchor strong if the source and
 target differ sharply in sentence length, discourse mode, dialect/register,
@@ -322,6 +444,9 @@ source_sentence_anchor_selection:
       selected_form_match_status: "strong_form_match | acceptable_form_match"
       target_form_requirements: {}
       selected_source_form_analysis: {}
+      narrative_action_match: "exact | close"
+      entity_action_role_match: "exact | close"
+      why_action_match_is_not_loose_analogy: ""
       acceptable_differences_from_source_form: []
       selected_source_sentence_ref:
         story_id: ""
@@ -334,12 +459,24 @@ source_sentence_anchor_selection:
         - source_sentence_ref: {}
           source_sentence_text: ""
           useful_formal_features_in_this_exact_sentence: []
+          narrative_action_match: "exact | close | loose | mismatch"
+          entity_action_role_match: "exact | close | loose | mismatch"
           form_match_status: "strong_form_match | acceptable_form_match | weak_form_match | failed_form_match"
           rejection_reason: ""
       source_sentence_parts:
         - part_id: "src_001"
           source_words_or_span: "" # literal span from the source, never "opening syntax"
           formal_job: ""
+          semantic_cargo_to_exclude:
+            - source_phrase: ""
+              why_excluded: "semantic content in this exact source span, not formal machinery"
+              target_language_forbidden_calques:
+                - ""
+      source_semantic_content_to_exclude:
+        - source_phrase: ""
+          why_excluded: "semantic content/image/entity from the source, not formal machinery"
+          target_language_forbidden_calques:
+            - ""
       target_payload_slots:
         - slot_id: "tgt_001"
           planned_content: ""
@@ -356,6 +493,8 @@ source_to_target_alignment_plan:
         source_formal_job: ""
         target_payload: ""
         target_formal_job: ""
+        source_semantic_cargo_not_to_copy:
+          - ""
     required_surface_constraints:
       - "what the target sentence must preserve from this exact source sentence form"
     forbidden_surface_escapes:
@@ -370,6 +509,23 @@ fit just as well. `why_selected_before_writing` and
 source sentence, and `source_sentence_parts.source_words_or_span` must be an
 actual contiguous span from that source sentence, never a label such as
 "opening", "main clause", "qualification", or "turning phrase".
+
+Every selected source sentence must also declare
+`source_semantic_content_to_exclude`: concrete source images, entities,
+conceptual conclusions, and memorable phrases that the target must not inherit,
+plus target-language forbidden calques. Formal imitation is allowed; source
+semantic cargo is not. For example, if the source contains "black seas of
+infinity", a pt-BR target must not contain "mares negros de infinito", and if
+the source contains "small drops of water that torturers let fall", the target
+must not reuse drops, torturers, or the same torture image.
+
+This exclusion must also happen per source part. If the formal span is "The
+Pequots, enfeebled by a previous war", the target may inherit an opening
+dependent pressure, but it must not translate "enfeebled" into "enfraquecidos"
+or invent an analogous weakening unless the planned payload independently
+requires weakening. Each `source_sentence_parts` item must list the semantic
+cargo inside that span and the target-language calques that would reveal it was
+copied.
 
 Do not use generic source spans such as "opening syntax", "clause skeleton",
 "main clause", or "qualification" unless they are accompanied by literal source
@@ -448,13 +604,16 @@ sentence_anchor_final_audit:
       target_rhetorical_operation: ""
       source_rhetorical_operation: ""
       operation_match: "exact | close | partial | no"
+      narrative_action_match: "exact | close | loose | mismatch"
+      entity_action_role_match: "exact | close | loose | mismatch"
+      why_action_match_is_not_loose_analogy: ""
       formal_match_checks:
-        mood_match: "yes | acceptable_difference | no"
-        clause_sequence_match: "yes | acceptable_difference | no"
-        coordination_subordination_match: "yes | acceptable_difference | no"
-        turn_logic_match: "yes | acceptable_difference | no"
-        punctuation_function_match: "yes | acceptable_difference | no"
-        category_fit: "yes | acceptable_difference | no"
+        mood_match: "'yes' | acceptable_difference | 'no'"
+        clause_sequence_match: "'yes' | acceptable_difference | 'no'"
+        coordination_subordination_match: "'yes' | acceptable_difference | 'no'"
+        turn_logic_match: "'yes' | acceptable_difference | 'no'"
+        punctuation_function_match: "'yes' | acceptable_difference | 'no'"
+        category_fit: "'yes' | acceptable_difference | 'no'"
         acceptable_differences_from_matching:
           - ""
       initial_anchor_status: "strong_anchor | acceptable_anchor | weak_anchor | failed_anchor"
@@ -481,6 +640,9 @@ final_anchor_lock:
       target_rhetorical_operation: ""
       source_rhetorical_operation: ""
       operation_match: "exact | close"
+      narrative_action_match: "exact | close"
+      entity_action_role_match: "exact | close"
+      why_action_match_is_not_loose_analogy: ""
       formal_match_status: "strong_form_match | acceptable_form_match"
 ```
 
