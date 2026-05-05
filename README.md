@@ -1,84 +1,135 @@
 # Literary Composition Engine for Hermes
 
-A Hermes-native experiment in controlled literary composition.
+Literary Composition Engine is a Hermes skill for building an author model from
+a prose corpus and using it to write long-form text through plans, source
+sentences, audits and repair gates.
 
-This project treats literature as the hardest benchmark for AI writing. The goal is not to make an LLM sound vaguely literary, or to ask for an author name and hope style appears. The goal is to turn style into an executable composition process: a sequence of corpus preparation, author-pack construction, validation, sentence-level anchoring, adversarial audit, repair, and release.
+The skill is built for the Hermes Agent Creative Hackathon. It uses literature
+as the test case because literary prose makes weak composition easy to see:
+paragraphs must carry pressure, sentences must have a reason to take their
+shape, and word-list mimicry shows up quickly.
 
-The premise is simple: slop appears when a statistical model is asked to continue language without a procedure for authorship. Fluency survives. Preference-shaped polish survives. But the ordered relation between premise, paragraph, sentence, and phrase usually collapses into generic motion.
+The repository contains the Hermes skill, the artifact schemas it expects, the
+mechanical scripts used by the runtime, and a Lovecraft demo story generated
+with the workflow.
 
-Hermes gives that process a runtime. It prepares a corpus, builds editable author contracts, validates those contracts before writing, and then composes through plans and source-sentence anchors rather than free prompting.
+## Documentation quick links
 
-If an agent can produce prose with serious literary value under this pressure, easier writing domains follow from the same machinery: brand voice, ghostwriting, editorial memory, business prose, creative collaboration, and any workflow where style must remain durable across sessions.
+* [What the skill does](#what-the-skill-does)
+* [Quick start](#quick-start)
+* [Workspace layout](#workspace-layout)
+* [The author pack](#the-author-pack)
+* [Writing with source sentences](#writing-with-source-sentences)
+* [Generated artifacts](#generated-artifacts)
+* [Validation](#validation)
+* [Demo](#demo)
+* [Known limitations](#known-limitations)
 
-## Core Idea
+## What the skill does
 
-The engine does not treat style as tone, word choice, or a bag of signature tokens. It treats style as composition under constraint.
+The skill runs four phases, plus a final repair pass:
 
-A run is built around this chain:
+1. **Corpus preparation.** Hermes turns source files into a SQLite corpus with
+   stories, paragraphs and sentences.
+2. **Author pack construction.** Hermes derives theme and style contracts from
+   the corpus, with evidence and executable instruction pairs.
+3. **Validation and calibration.** Hermes checks whether the author pack is
+   complete, evidenced, bounded, non-contradictory and usable for generation.
+4. **Writing runtime.** Hermes turns a user request into outlines, a blueprint,
+   paragraph plans, neutral drafts and final prose written through real source
+   sentence anchors.
+5. **Final repair.** Hermes audits the assembled story for weak anchors, local
+   incoherence, continuity drift and generic LLM prose before release.
 
-```text
-corpus
--> author pack
--> validation gate
--> user request
--> outline / selection
--> length choice
--> story blueprint
--> paragraph plan
--> neutral paragraph
--> sentence meaning plan
--> literal source-sentence anchor
--> target sentence
--> audit
--> repair
--> release
-```
+The workflow is deliberately file-heavy. Each important decision is written to
+an artifact that can be inspected later: what was planned, what was allowed,
+what was blocked, which source sentence was used, what failed, what was
+repaired and why the text was released.
 
-The important property is that writing does not begin as final prose. It begins as meaning, structure, and allowed operations. Final prose is only produced after the runtime knows what the paragraph must do and which real source sentences can carry the planned sentence meanings.
-
-Core invariant:
+The main rule is:
 
 ```text
 agents decide; Python persists
 ```
 
-Agents make literary and editorial decisions. Python scripts create databases, count, index, validate, assemble, and persist artifacts. They do not choose stories, interpret style, select anchors, write final prose, or justify weak literary decisions.
+Agents make literary and editorial decisions. Python creates databases, counts
+tokens and paragraphs, indexes text, validates structure and assembles released
+artifacts. Python does not choose anchors, interpret style, write final prose or
+justify a weak literary decision.
 
-## The Four Phases
+## Quick start
 
-### Phase 1: Corpus Preparation
+Install or copy the skill into a Hermes skills directory, then provide a source
+directory for an author.
 
-Hermes starts from messy source files: EPUB, PDF, TXT, DOCX, or extracted text. LLM subagents discover works, extract story boundaries, clean text, and validate the result. Python stores accepted artifacts in SQLite.
+A typical request to Hermes looks like this:
 
-The corpus database contains:
+```text
+Use the literary-composition-engine skill.
+Prepare a corpus for <author_slug> from sources/<author_slug>/.
+Run Phase 1 ingestion from zero.
+Run Phase 2 author pack construction.
+Run Phase 3 validation.
+If Phase 3 allows generation, run Phase 4 and ask me to choose among 10 outlines.
+After I choose an outline, suggest length options from corpus statistics and ask me to choose.
+Then write the story using sentence-by-sentence source anchors and Phase 4.5 final repair.
+```
 
-- `stories`
-- `paragraphs`
-- `sentences`
-- full-text search tables
-- ingestion logs
+Generation starts only after Phase 3 has released a validated author pack.
 
-The sentence table is not incidental. It later supplies the literal source sentences used by the writing runtime.
+## Workspace layout
 
-### Phase 2: Author Pack Construction
+The skill expects the active Hermes workspace to use this layout:
 
-Hermes builds an author pack from the corpus along two axes: theme and style.
+```text
+sources/<author>/                         # user-provided source files
+corpus/<author>.db                        # Phase 1 SQLite corpus
+author-models/<author>/                   # Phase 2/3 author pack
+runs/<author>/<run_id>/                   # Phase 4 writing runs
+```
 
-The theme axis asks what kind of fictional world the author builds:
+The skill itself is stored here:
 
-- `theme.world_rules`: what rules reality follows
-- `theme.knowledge_path`: how ignorance becomes knowledge
-- `theme.human_stakes`: what forms of value, agency, fear, loss, or pressure matter
-- `theme.symbolic_operations`: which symbols actually perform semantic work, and when they must be blocked
+```text
+skills/creative/literary-composition-engine/
+  SKILL.md
+  references/
+    prompts/
+    schemas/
+    artifact-schemas.md
+  scripts/
+    corpus_db.py
+    validate_phase4_run.py
+```
 
-The style axis asks how language behaves:
+Generated corpora, author packs and run artifacts are not included in this
+repository. They depend on the corpus supplied by the operator and may contain
+source material.
 
-- `style.narration_contract`: who speaks, from what distance, with what authority and knowledge limits
-- `style.thought_progression`: how thought moves across a paragraph
-- `style.sentence_making`: how sentences are architected
-- `style.diction_and_microchoices`: how lexical and connective choices function
+## The author pack
 
-The output is not a vibe profile. It is an operational author pack:
+Phase 2 builds an author pack along two axes.
+
+The **theme** axis describes what kind of fictional world the corpus supports:
+
+* `theme.world_rules`: how reality behaves in the author model.
+* `theme.knowledge_path`: how ignorance, evidence, suspicion and recognition
+  move through the work.
+* `theme.human_stakes`: what kinds of loss, agency, fear, pressure or value
+  matter.
+* `theme.symbolic_operations`: which symbols perform semantic work, and under
+  what conditions they must not be used.
+
+The **style** axis describes how language moves:
+
+* `style.narration_contract`: narrator distance, authority and knowledge
+  limits.
+* `style.thought_progression`: how a paragraph moves from observation to claim,
+  qualification, reversal or consequence.
+* `style.sentence_making`: how sentences are built.
+* `style.diction_and_microchoices`: what lexical and connective choices do.
+
+The resulting pack is written as:
 
 ```text
 author-models/<author>/
@@ -88,25 +139,32 @@ author-models/<author>/
   instruction.pairs.yaml
 ```
 
-Each card must say what it controls, what it does not control, when to use it, when not to use it, which moves are allowed, which moves are prohibited, how failure looks, and how repair is allowed.
+Cards are procedural. A usable card says when to apply a move, when to block it,
+what source evidence supports it, what failure looks like, and which repair is
+allowed.
 
-### Phase 3: Artifact Validation & Calibration
+## Phase 3 gate
 
-Before writing is allowed, Hermes validates the author pack.
+Before any story is written, Phase 3 checks the pack. Generation is blocked
+unless:
 
-This gate rejects:
+```yaml
+generation_allowed_for_phase_4: true
+```
 
-- unsupported generative claims
-- vague tone commands
-- symbols used as decoration
-- wordlists mistaken for style
-- syntax described as sentence length rather than architecture
-- evidence without limits
-- conflicts between cards
-- hypotheses promoted into generation rules
-- cards that agents cannot execute without intuition
+The validation pass looks for:
 
-The result is a validated pack:
+* missing cards or missing operational fields
+* unsupported generation rules
+* evidence without explicit limits
+* decorative symbols
+* wordlists presented as style
+* sentence rules that only describe length
+* vague tone commands
+* contradictions between cards
+* hypotheses accidentally used as generation rules
+
+Approved artifacts are copied to:
 
 ```text
 author-models/<author>/validated/
@@ -117,71 +175,41 @@ author-models/<author>/validated/
   phase3.release.yaml
 ```
 
-Phase 4 is blocked unless `phase3.release.yaml` explicitly says:
+## Writing with source sentences
 
-```yaml
-generation_allowed_for_phase_4: true
-```
+The current writing method is literal source sentence anchoring.
 
-### Phase 4: Writing Runtime
+For each planned target sentence, Hermes first writes the intended meaning of
+that sentence. It then searches the corpus for real source sentences that can
+carry that meaning formally. The chosen source sentence supplies a local
+machine: clause order, subordination, contrast, cadence, punctuation behavior
+and rhetorical motion.
 
-Phase 4 turns a user request into controlled prose.
+The target sentence uses new semantic content. It must not copy the source
+sentence's characters, images, events, conclusions or memorable phrases. It must
+still be traceably modeled on the source sentence.
 
-Hermes may generate outline candidates, accept a user outline, rewrite a draft, continue a text, or write an isolated passage. For story generation, the user chooses an outline and a length option before the runtime locks the blueprint.
-
-The runtime then creates:
-
-```text
-runs/<author>/<run_id>/
-  writing.request.yaml
-  outline.candidates.yaml
-  outline.selection.yaml
-  length.options.yaml
-  length.selection.yaml
-  story.blueprint.yaml
-  continuity.bible.yaml
-  story.progression.plan.yaml
-  paragraph.plan.yaml
-```
-
-For each paragraph, Hermes creates a neutral paragraph first. The neutral paragraph carries the required meaning but no authorial style. Only after that does sentence-level anchoring begin.
-
-## Sentence-Level Source Anchoring
-
-The canonical writing method is literal source-sentence anchoring.
-
-For every target sentence, the runtime must first define the target sentence's planned meaning. It then searches the corpus for real source sentences whose syntactic and rhetorical movement can carry that meaning. The selected source sentence acts as a formal machine.
-
-A source sentence can contribute:
-
-- clause order
-- subordination
-- contrast
-- punctuation behavior
-- cadence
-- rhetorical motion
-- placement of evidence, qualification, reversal, or conclusion
-- relation between narrator, claim, observation, and consequence
-
-The target sentence must carry different semantic content. It must not copy the source sentence's entities, memorable images, conclusions, or world facts. But it must remain traceably modeled on the source sentence.
-
-This is why the engine rejects the older `sentence_patterns` approach. A pattern summary is too easy for a model to fake after the fact. A literal source sentence is harder to evade and easier to audit. The runtime can ask: does the target sentence actually inherit this sentence's movement, or is the explanation just retroactive handwaving?
-
-Anchor selection is not allowed before the sentence meaning plan exists. A run is unreleasable if the parent process preselects anchors, passes recommended anchors into a delegate, or chooses a source sentence and then invents a target meaning around it. The direction must be:
+The direction is:
 
 ```text
-planned meaning -> candidate source sentences -> selected anchor -> target sentence
+planned target meaning
+-> candidate source sentences
+-> selected source sentence
+-> target sentence
+-> audit
+-> repair or release
 ```
 
-not:
+The reverse direction is blocked. Hermes should not pick an arbitrary source
+sentence and then invent a reason why it fits.
 
-```text
-random source sentence -> target sentence -> justification
-```
+The skill also blocks the older `sentence_patterns` approach. Pattern summaries
+were too easy to fake. Literal source sentences give auditors something
+concrete to compare.
 
-## Paragraph Runtime
+## Paragraph runtime
 
-Each paragraph has its own mini-runtime:
+Each paragraph is generated through its own artifact sequence:
 
 ```text
 paragraph.request.yaml
@@ -200,165 +228,95 @@ final.paragraph.yaml
 paragraph.release.yaml
 ```
 
-A paragraph is released only after the runtime has checked:
+The neutral paragraph states the content without authorial styling. The sentence
+plan decides what each sentence must do. Source sentence selection happens only
+after that plan exists.
 
-- semantic preservation
-- continuity with previously released paragraphs
-- source-sentence fidelity
-- theme/style instruction-pair application
-- anti-pastiche constraints
-- slop markers
-- Phase 3 runtime flags
-- absence of forbidden pattern artifacts
+A released paragraph must preserve meaning and continuity, obey the author
+pack, use real source anchors, avoid decorative pastiche, and satisfy all Phase
+3 runtime flags.
 
-A failed sentence must be repaired by rewriting the target sentence or selecting a better source sentence. Improving the explanation is not repair.
+## Generated artifacts
 
-## Final Repair
+The main generated files are documented in:
 
-Phase 4.5 is a story-level repair gate. It exists because local paragraph approval is not enough.
+```text
+skills/creative/literary-composition-engine/references/artifact-schemas.md
+```
 
-The final repair pass checks:
-
-- weak sentence anchors that survived local audit
-- incoherent sentence-to-sentence transitions
-- wrong repairs that flattened authorial weirdness into generic prose
-- GPT-style filler and fake rhetorical structures
-- continuity drift
-- accumulated pastiche
-
-Repair is conservative. It may fix local failures, but it may not invent new story content, activate new cards, or replace source-sentence anchoring with generic cleanup.
-
-## Schemas And Validation
-
-The skill includes artifact schemas under:
+Schemas live under:
 
 ```text
 skills/creative/literary-composition-engine/references/schemas/
+  phase1/
+  phase2/
+  phase3/
+  phase4/
+  phase45/
 ```
 
-Schemas define the expected structure of generated artifacts. They also encode release constraints and `must_not` rules. They are not scoring rubrics. The project deliberately avoids arbitrary numeric style scores, similarity scores, confidence values, or tone-strength sliders.
+They define required structure and allowed status values. They do not define
+numeric style scores. Mechanical corpus statistics are allowed where useful;
+arbitrary style strength, confidence or similarity scores are not part of the
+runtime.
 
-The schema tree covers:
+## Validation
 
-```text
-phase1/    corpus discovery, extraction, validation
-phase2/    cards, contracts, evidence notes, instruction pairs
-phase3/    validation manifests, claims, evidence traces, conflicts, release gates
-phase4/    requests, outlines, blueprints, paragraph plans, anchors, audits, release
-phase45/   final text repair
-```
-
-The mechanical validator lives at:
+The mechanical Phase 4 validator is:
 
 ```text
 skills/creative/literary-composition-engine/scripts/validate_phase4_run.py
 ```
 
-It checks file presence, YAML parseability, stage ordering, paragraph release, final release, forbidden pattern artifacts, source-anchor requirements, and run-decision flags. It is necessary but not sufficient: a validator can catch structural cheating, but literary quality still depends on adversarial audits and real source-sentence fidelity.
+It checks that the run has the expected files, valid YAML, correct stage order,
+paragraph releases, final release, source sentence anchors, decision logs and no
+legacy pattern artifacts.
 
-## Repository Layout
-
-```text
-skills/creative/literary-composition-engine/
-  SKILL.md
-  references/
-    prompts/
-      discover_stories.md
-      extract_story.md
-      cleanup_story.md
-      validate_story.md
-      run_phase2_author_pack.md
-      run_phase3_validation.md
-      run_phase4_writing_runtime.md
-      audit_phase4_sentence_anchor.md
-      run_phase4_sentence_anchor_repair_pass.md
-      run_phase45_final_text_repair.md
-    schemas/
-      phase1/
-      phase2/
-      phase3/
-      phase4/
-      phase45/
-    artifact-schemas.md
-  scripts/
-    corpus_db.py
-    validate_phase4_run.py
-
-examples/lovecraft/
-  a-cor-do-lodo.pt-BR.md
-  the-colour-of-sludge.en.md
-```
-
-Generated corpora, author packs, and run artifacts are not included. They are local working data and may contain source material from whatever corpus the operator provides.
-
-## Running With Hermes
-
-Install or copy the skill into your Hermes skills directory, then provide an author source directory.
-
-Typical request:
-
-```text
-Use the literary-composition-engine skill.
-Prepare a corpus for <author_slug> from sources/<author_slug>/.
-Run Phase 1 ingestion from zero.
-Run Phase 2 author pack construction.
-Run Phase 3 validation.
-If Phase 3 allows generation, run Phase 4 and ask me to choose among 10 outlines.
-After I choose an outline, suggest length options from corpus statistics and ask me to choose.
-Then write the story using sentence-by-sentence source anchors and Phase 4.5 final repair.
-```
-
-Expected workspace shape:
-
-```text
-sources/<author>/
-corpus/<author>.db
-author-models/<author>/
-runs/<author>/<run_id>/
-```
-
-Once ingestion is finished, generation is still not a one-shot prompt. Hermes should ask for outline selection and length selection, then compose through blueprinting, paragraph planning, neutral drafting, source-sentence anchoring, audit, repair, and release.
+It catches structural failures. It does not replace literary judgment. A run can
+still produce bad prose if Hermes chooses a merely convenient source sentence
+instead of a necessary or sufficiently close one. The adversarial anchor audits
+exist to catch that higher-level failure.
 
 ## Demo
 
 The Lovecraft demo story is included in Portuguese and English:
 
-- [A Cor do Lodo](examples/lovecraft/a-cor-do-lodo.pt-BR.md)
-- [The Colour of Sludge](examples/lovecraft/the-colour-of-sludge.en.md)
+* [A Cor do Lodo](examples/lovecraft/a-cor-do-lodo.pt-BR.md)
+* [The Colour of Sludge](examples/lovecraft/the-colour-of-sludge.en.md)
 
-The English file is a translation of the Portuguese demo output, included for presentation/readability.
-
-## Why Literature
-
-Literature is the stress case because every weak assumption becomes visible. A model cannot hide behind ordinary usefulness when sentence architecture, paragraph pressure, image discipline, and rhetorical motion are all being judged at once.
-
-The experiment asks whether style can be decomposed into teachable operations and enforced by an agentic system. If that works at the literary edge, then controlled style becomes infrastructure for less exacting forms of writing.
+The English file is a translation of the Portuguese demo output, included for
+presentation and readability.
 
 ## Why Hermes
 
-This workflow uses Hermes-specific strengths:
+Hermes is useful here because the workflow is long-lived and artifact-heavy.
+The skill uses:
 
-- persistent memory and skill state for editable author packs
-- isolated subagents for corpus extraction, card construction, validation, audit, and repair
-- model swapping for analysis, drafting, paraphrase, and adversarial review
-- long-running workflows with visible intermediate artifacts
-- local files that can be inspected, edited, rerun, and validated
+* persistent files for author packs and run state
+* subagents for corpus extraction, card construction, validation and audit
+* model swapping for analysis, drafting, paraphrase and adversarial review
+* visible intermediate artifacts that can be inspected, repaired and rerun
 
-The result can produce strong passages with good prompting, but the point is stronger than prompting. The skill makes quality inspectable. Every important decision leaves an artifact: what was planned, what evidence supported it, which source sentence was used, what was blocked, what failed, what was repaired, and why the text was released.
+Strong one-shot prompts can produce strong paragraphs. This skill adds a record
+of how a passage was planned, anchored, audited and repaired, so a good result
+can be inspected instead of merely accepted.
 
-## What Is Not Included
+## What is not included
 
 No copyrighted corpus is included in this repository.
 
-Operators are responsible for providing source files they are allowed to process. The skill can be tested on public-domain corpora or private corpora you have the right to use.
+Operators are responsible for providing source files they are allowed to
+process. The skill can be tested on public-domain corpora or private corpora
+the operator has the right to use.
 
-## Known Limitations
+## Known limitations
 
-This is a hackathon prototype, not a finished product.
+This is a hackathon prototype.
 
-- Mechanical validation is necessary but not sufficient.
-- A run can still fail if Hermes chooses merely convenient source sentences instead of necessary or sufficiently close formal machines.
-- Cross-language source anchoring is harder than same-language anchoring.
-- Long-form output still benefits from human inspection when the corpus is small or stylistically varied.
-- Final repair must preserve correct source-sentence mimicry. It should not clean up authorial difficulty into generic LLM prose.
-- The hardest unsolved problem is anchor selection quality: the system must keep improving its ability to find a source sentence whose movement genuinely fits the planned target meaning.
+* Mechanical validation is necessary but not sufficient.
+* Anchor selection quality is still the hardest part of the runtime.
+* Cross-language anchoring is harder than same-language anchoring.
+* Long-form runs still benefit from human inspection when the corpus is small
+  or stylistically varied.
+* Final repair must preserve good source-sentence mimicry. It should not smooth
+  authorial difficulty into generic LLM prose.
